@@ -45,6 +45,9 @@
   </div>
 </div>
 
+<!-- ALERTAS DE ESTOQUE -->
+<div id="alertasEstoque" style="display:none;padding:0 32px;max-width:1400px;margin:16px auto 0"></div>
+
 <!-- PEDIDOS -->
 <div id="page-pedido" class="page active">
   <div class="sidebar-row">
@@ -141,7 +144,12 @@
     <div class="metric"><div class="metric-bar" style="background:linear-gradient(90deg,transparent,#4caf72,transparent)"></div><div class="m-lbl">Itens Vendidos</div><div class="m-val" id="metItens" style="color:#6dc87d">0</div><div class="m-sub" style="color:#4caf72">unidades</div></div>
   </div>
   <div class="card">
-    <div class="card-title"><span class="card-title-icon">🧾</span>Histórico de Pedidos</div>
+    <div class="card-title">
+      <span class="card-title-icon">🧾</span>Histórico de Pedidos
+      <div style="margin-left:auto">
+        <button class="btn btn-sm" onclick="exportarVendas()" style="background:rgba(76,175,114,.1);border-color:rgba(76,175,114,.3);color:#6dc87d;font-size:11px">📥 Exportar Planilha</button>
+      </div>
+    </div>
     <div id="listaVendas"><div class="loading"><span class="spinner"></span>Carregando...</div></div>
   </div>
 </div>
@@ -165,7 +173,12 @@
       </div>
     </div>
     <div class="card" style="margin-bottom:0">
-      <div class="card-title"><span class="card-title-icon">📦</span>Situação do Estoque</div>
+      <div class="card-title">
+        <span class="card-title-icon">📦</span>Situação do Estoque
+        <div style="margin-left:auto">
+          <button class="btn btn-sm" onclick="exportarEstoque()" style="background:rgba(76,175,114,.1);border-color:rgba(76,175,114,.3);color:#6dc87d;font-size:11px">📥 Exportar</button>
+        </div>
+      </div>
       <div id="tabelaEstoque"><div class="loading"><span class="spinner"></span>Carregando...</div></div>
     </div>
   </div>
