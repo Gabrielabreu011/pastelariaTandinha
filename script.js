@@ -283,26 +283,55 @@ window.excluirPedido = async function(id, nome) {
 // DASHBOARD
 // ==========================================
 function buildPie(data, total, size) {
-  size = size || 190;
-  if (!data.length) return '';
-  var angle = 0, cx = size/2, cy = size/2, r = size/2 - 8, ri = r * 0.52;
+  size = size || 200;
+  if (!data.length || total === 0) return '<div style="width:'+size+'px;height:'+size+'px;display:flex;align-items:center;justify-content:center;color:var(--t3);font-size:12px">Sem dados</div>';
+
+  // Se só tem 1 item, desenha círculo completo
+  if (data.length === 1) {
+    var col = PIE_COLORS[0];
+    var cx = size/2, cy = size/2, r = size/2 - 10, ri = r * 0.52;
+    var svg = '<svg width="'+size+'" height="'+size+'" viewBox="0 0 '+size+' '+size+'">';
+    svg += '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="'+col+'" opacity="0.9"/>';
+    svg += '<circle cx="'+cx+'" cy="'+cy+'" r="'+ri+'" fill="#16161a"/>';
+    svg += '<text x="'+cx+'" y="'+cy+'" text-anchor="middle" dominant-baseline="middle" fill="#fff" font-size="12" font-weight="800" font-family="Inter,sans-serif">100%</text>';
+    svg += '</svg>';
+    return svg;
+  }
+
+  var cx = size/2, cy = size/2, r = size/2 - 10, ri = r * 0.5;
+  var angle = -Math.PI / 2; // começa do topo
   var paths = '';
+
   data.forEach(function(item, idx) {
-    var q = item[1], frac = q / total, sweep = frac * 2 * Math.PI;
-    var x1 = cx + r * Math.sin(angle), y1 = cy - r * Math.cos(angle);
-    angle += sweep;
-    var x2 = cx + r * Math.sin(angle), y2 = cy - r * Math.cos(angle);
-    var xi1 = cx + ri * Math.sin(angle-sweep), yi1 = cy - ri * Math.cos(angle-sweep);
-    var xi2 = cx + ri * Math.sin(angle), yi2 = cy - ri * Math.cos(angle);
-    var lg = sweep > Math.PI ? 1 : 0;
+    var frac = item[1] / total;
+    var sweep = frac * 2 * Math.PI;
+    var endAngle = angle + sweep;
     var col = PIE_COLORS[idx % PIE_COLORS.length];
-    var mid = angle - sweep/2;
-    var lx = cx + r * 0.72 * Math.sin(mid), ly = cy - r * 0.72 * Math.cos(mid);
+    var lg = sweep > Math.PI ? 1 : 0;
+
+    // Fatia externa
+    var x1 = cx + r * Math.cos(angle), y1 = cy + r * Math.sin(angle);
+    var x2 = cx + r * Math.cos(endAngle), y2 = cy + r * Math.sin(endAngle);
+    // Furo interno
+    var ix1 = cx + ri * Math.cos(angle), iy1 = cy + ri * Math.sin(angle);
+    var ix2 = cx + ri * Math.cos(endAngle), iy2 = cy + ri * Math.sin(endAngle);
+
+    var d = 'M '+ix1+' '+iy1+' L '+x1+' '+y1+' A '+r+' '+r+' 0 '+lg+' 1 '+x2+' '+y2+' L '+ix2+' '+iy2+' A '+ri+' '+ri+' 0 '+lg+' 0 '+ix1+' '+iy1+' Z';
+    paths += '<path d="'+d+'" fill="'+col+'" stroke="#16161a" stroke-width="1.5">';
+    paths += '<title>'+item[0]+': '+item[1]+' ('+Math.round(frac*100)+'%)</title></path>';
+
+    // Label % no meio da fatia
     var pct = Math.round(frac * 100);
-    paths += '<path d="M' + xi1 + ',' + yi1 + ' A' + ri + ',' + ri + ' 0 ' + lg + ',0 ' + xi2 + ',' + yi2 + ' L' + x2 + ',' + y2 + ' A' + r + ',' + r + ' 0 ' + lg + ',1 ' + x1 + ',' + y1 + ' Z" fill="' + col + '" opacity="0.9"><title>' + item[0] + ': ' + q + ' (' + pct + '%)</title></path>';
-    if (pct >= 6) paths += '<text x="' + lx + '" y="' + ly + '" text-anchor="middle" dominant-baseline="middle" fill="#fff" font-size="10" font-weight="800" font-family="Inter,sans-serif">' + pct + '%</text>';
+    if (pct >= 5) {
+      var midA = angle + sweep/2;
+      var lx = cx + (r*0.7) * Math.cos(midA);
+      var ly = cy + (r*0.7) * Math.sin(midA);
+      paths += '<text x="'+lx+'" y="'+ly+'" text-anchor="middle" dominant-baseline="middle" fill="#fff" font-size="11" font-weight="800" font-family="Inter,sans-serif" style="pointer-events:none">'+pct+'%</text>';
+    }
+    angle = endAngle;
   });
-  return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '">' + paths + '</svg>';
+
+  return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 '+size+' '+size+'" xmlns="http://www.w3.org/2000/svg">'+paths+'</svg>';
 }
 
 function rDash() {
