@@ -572,6 +572,39 @@ window.excluirPedido=async function(id,nome){
 };
 
 // ---- DASHBOARD ----
+const PIE_COLORS=['#5b8dee','#4caf72','#D4A843','#d06060','#a78bfa','#f97316','#22d3ee','#f472b6','#a3e635','#fbbf24'];
+
+function buildPie(data,total,size=220){
+  if(!data.length)return'';
+  let angle=0;
+  const cx=size/2,cy=size/2,r=size/2-8,ri=r*0.52;
+  const slices=data.map(([nm,q],i)=>{
+    const frac=q/total,sweep=frac*2*Math.PI;
+    const x1=cx+r*Math.sin(angle),y1=cy-r*Math.cos(angle);
+    angle+=sweep;
+    const x2=cx+r*Math.sin(angle),y2=cy-r*Math.cos(angle);
+    const xi1=cx+ri*Math.sin(angle-sweep),yi1=cy-ri*Math.cos(angle-sweep);
+    const xi2=cx+ri*Math.sin(angle),yi2=cy-ri*Math.cos(angle);
+    const lg=sweep>Math.PI?1:0;
+    const col=PIE_COLORS[i%PIE_COLORS.length];
+    const mid=angle-sweep/2;
+    const lx=cx+(r*0.78)*Math.sin(mid),ly=cy-(r*0.78)*Math.cos(mid);
+    const pct=Math.round(frac*100);
+    return{path:`M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${lg},1 ${x2},${y2} Z`,hole:`M${xi1},${yi1} A${ri},${ri} 0 ${lg},0 ${xi2},${yi2} L${x2},${y2} A${r},${r} 0 ${lg},1 ${x1},${y1} L${xi1},${yi1} Z`,col,lx,ly,pct,nm,q,frac};
+  });
+  const svgSlices=slices.map((s,i)=>`
+    <path d="${s.hole}" fill="${s.col}" opacity="0.92" style="cursor:pointer;transition:opacity .15s" onmouseover="this.style.opacity=1;document.getElementById('pie-tip-${i}').style.display='flex'" onmouseout="this.style.opacity=0.92;document.getElementById('pie-tip-${i}').style.display='none'">
+      <title>${s.nm}: ${s.q} un. (${s.pct}%)</title>
+    </path>
+    ${s.pct>=6?`<text x="${s.lx}" y="${s.ly}" text-anchor="middle" dominant-baseline="middle" fill="#fff" font-size="10" font-weight="800" font-family="Inter,sans-serif" style="pointer-events:none;text-shadow:0 1px 3px rgba(0,0,0,.8)">${s.pct}%</text>`:''}
+  `).join('');
+  const tooltips=slices.map((s,i)=>`<div id="pie-tip-${i}" style="display:none;align-items:center;gap:6px;padding:5px 10px;background:rgba(30,30,35,.95);border:1px solid ${s.col};border-radius:8px;font-size:12px;font-weight:600;color:#fff;position:absolute;white-space:nowrap;top:10px;left:${size+10}px;pointer-events:none"><span style="width:8px;height:8px;border-radius:50%;background:${s.col};flex-shrink:0"></span>${s.nm}: ${s.q} un. (${s.pct}%)</div>`).join('');
+  return`<div style="position:relative;display:inline-block">
+    <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${svgSlices}</svg>
+    ${tooltips}
+  </div>`;
+}
+
 function rDash(){
   const fat=V.reduce((s,v)=>s+v.total,0),itens=V.reduce((s,v)=>s+v.itens.reduce((a,i)=>a+i.qtd,0),0);
   document.getElementById('d-pedidos').textContent=V.length;
@@ -588,18 +621,15 @@ function rDash(){
     return;
   }
 
-  const maxQ=sorted[0][1];
   const totalItens=sorted.reduce((s,[,q])=>s+q,0);
-
-  // Cores das barras do ranking (verde para top, vermelho para low)
+  const maxQ=sorted[0][1];
+  const medals=['🥇','🥈','🥉','4°','5°','6°'];
   const greenColors=['rgba(76,175,114,.2)','rgba(76,175,114,.14)','rgba(76,175,114,.1)','rgba(76,175,114,.07)','rgba(76,175,114,.05)','rgba(76,175,114,.04)'];
   const greenText=['#6dc87d','#6dc87d','#5ab86a','#4aaa5a','#3a9a4a','#2a8a3a'];
 
-  // Mais vendidos — verde
   document.getElementById('d-top').innerHTML=sorted.slice(0,6).map(([nm,q],i)=>{
     const pct=Math.round(q/maxQ*100);
     const share=Math.round(q/totalItens*100);
-    const medals=['🥇','🥈','🥉','4°','5°','6°'];
     return`<div class="top-item" style="background:${greenColors[i]};border-radius:10px;margin:3px 0;padding:10px 12px">
       <div style="width:28px;height:28px;border-radius:7px;background:rgba(76,175,114,.2);border:1px solid rgba(76,175,114,.3);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">${medals[i]}</div>
       <span style="flex:1;font-size:13px;color:var(--t1);font-weight:600">${nm}</span>
@@ -613,11 +643,10 @@ function rDash(){
     </div>`;
   }).join('');
 
-  // Menos vendidos — vermelho
   const lowSorted=[...sorted].reverse();
+  const redColors=['rgba(208,96,96,.18)','rgba(208,96,96,.13)','rgba(208,96,96,.09)','rgba(208,96,96,.06)','rgba(208,96,96,.04)','rgba(208,96,96,.03)'];
   document.getElementById('d-low').innerHTML=lowSorted.slice(0,6).map(([nm,q],i)=>{
     const pct=Math.round(q/maxQ*100)||2;
-    const redColors=['rgba(208,96,96,.18)','rgba(208,96,96,.13)','rgba(208,96,96,.09)','rgba(208,96,96,.06)','rgba(208,96,96,.04)','rgba(208,96,96,.03)'];
     return`<div class="low-item" style="background:${redColors[i]};border-radius:10px;margin:3px 0;padding:10px 12px">
       <span style="flex:1;font-size:13px;color:var(--t2);font-weight:500">${nm}</span>
       <div style="flex:2;background:rgba(0,0,0,.2);border-radius:4px;height:5px;overflow:hidden;margin:0 10px">
@@ -627,38 +656,51 @@ function rDash(){
     </div>`;
   }).join('');
 
-  // Gráfico colorido — azul gradiente por posição
-  const chartData=sorted.slice(0,10);
-  const maxV=chartData[0][1];
-  const BAR_H=180;
-  const barColors=[
-    'linear-gradient(180deg,#7AAAF5,#4470d0)',
-    'linear-gradient(180deg,#6dc87d,#3a9a4a)',
-    'linear-gradient(180deg,#F2D080,#A07830)',
-    'linear-gradient(180deg,#e08080,#a03030)',
-    'linear-gradient(180deg,#a78bfa,#6d3fa0)',
-    'linear-gradient(180deg,#f97316,#c05010)',
-    'linear-gradient(180deg,#22d3ee,#0e7490)',
-    'linear-gradient(180deg,#f472b6,#be185d)',
-    'linear-gradient(180deg,#a3e635,#4d7c0f)',
-    'linear-gradient(180deg,#fbbf24,#92400e)',
-  ];
-  const glowColors=['rgba(91,141,238,.3)','rgba(76,175,114,.3)','rgba(212,168,67,.3)','rgba(208,96,96,.3)','rgba(167,139,250,.3)','rgba(249,115,22,.3)','rgba(34,211,238,.3)','rgba(244,114,182,.3)','rgba(163,230,53,.3)','rgba(251,191,36,.3)'];
+  // PIZZA — quantidade vendida por produto
+  const pieData=sorted.slice(0,10);
+  const legend=pieData.map(([nm,q],i)=>{
+    const col=PIE_COLORS[i%PIE_COLORS.length];
+    const pct=Math.round(q/totalItens*100);
+    return`<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;transition:background .12s;cursor:default" onmouseover="this.style.background='rgba(255,255,255,.05)'" onmouseout="this.style.background='transparent'">
+      <span style="width:10px;height:10px;border-radius:50%;background:${col};flex-shrink:0;box-shadow:0 0 6px ${col}"></span>
+      <span style="flex:1;font-size:12px;color:var(--t1);font-weight:500">${nm}</span>
+      <span style="font-size:12px;font-weight:800;color:${col};min-width:24px;text-align:right">${q}</span>
+      <span style="font-size:11px;color:var(--t3);min-width:32px;text-align:right">${pct}%</span>
+    </div>`;
+  }).join('');
+
+  // PIZZA — faturamento por produto
+  const faturPor={};
+  V.forEach(v=>v.itens.forEach(it=>{faturPor[it.nome]=(faturPor[it.nome]||0)+it.preco*it.qtd;}));
+  const sortedFat=Object.entries(faturPor).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const totalFat=sortedFat.reduce((s,[,v])=>s+v,0);
+  const legendFat=sortedFat.map(([nm,v],i)=>{
+    const col=PIE_COLORS[i%PIE_COLORS.length];
+    const pct=Math.round(v/totalFat*100);
+    return`<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;transition:background .12s;cursor:default" onmouseover="this.style.background='rgba(255,255,255,.05)'" onmouseout="this.style.background='transparent'">
+      <span style="width:10px;height:10px;border-radius:50%;background:${col};flex-shrink:0;box-shadow:0 0 6px ${col}"></span>
+      <span style="flex:1;font-size:12px;color:var(--t1);font-weight:500">${nm}</span>
+      <span style="font-size:12px;font-weight:800;color:${col};min-width:60px;text-align:right">${fmt(v)}</span>
+      <span style="font-size:11px;color:var(--t3);min-width:32px;text-align:right">${pct}%</span>
+    </div>`;
+  }).join('');
 
   document.getElementById('d-chart').innerHTML=`
-    <div style="display:flex;align-items:flex-end;gap:8px;height:${BAR_H+60}px;padding-bottom:46px;padding-top:20px;position:relative">
-      ${chartData.map(([nm,q],idx)=>{
-        const h=Math.max(10,Math.round(q/maxV*BAR_H));
-        const pct=Math.round(q/totalItens*100);
-        return`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:default" title="${nm}: ${q} unidades (${pct}%)">
-          <div style="font-size:11px;color:#fff;font-weight:800;text-shadow:0 1px 4px rgba(0,0,0,.5)">${q}</div>
-          <div style="width:85%;background:rgba(255,255,255,.05);border-radius:8px 8px 0 0;height:${BAR_H}px;position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.06)">
-            <div style="position:absolute;bottom:0;left:0;right:0;height:${h}px;background:${barColors[idx%barColors.length]};border-radius:8px 8px 0 0;box-shadow:0 0 16px ${glowColors[idx%glowColors.length]};transition:height .7s cubic-bezier(.34,1.2,.64,1) ${idx*0.06}s"></div>
-          </div>
-          <div style="font-size:9px;color:var(--t3);text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px">${nm.split(' ').slice(-2).join(' ')}</div>
-          <div style="font-size:9px;font-weight:700;color:var(--t2)">${pct}%</div>
-        </div>`;
-      }).join('')}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px">
+      <div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--t3);margin-bottom:16px">🥧 Quantidade Vendida</div>
+        <div style="display:flex;gap:24px;align-items:center;flex-wrap:wrap">
+          <div style="flex-shrink:0">${buildPie(pieData,totalItens,200)}</div>
+          <div style="flex:1;min-width:160px">${legend}</div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--t3);margin-bottom:16px">💰 Faturamento por Produto</div>
+        <div style="display:flex;gap:24px;align-items:center;flex-wrap:wrap">
+          <div style="flex-shrink:0">${buildPie(sortedFat,totalFat,200)}</div>
+          <div style="flex:1;min-width:160px">${legendFat}</div>
+        </div>
+      </div>
     </div>`;
 }
 
