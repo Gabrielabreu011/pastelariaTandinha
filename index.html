@@ -256,40 +256,62 @@ tr:hover td{background:rgba(255,255,255,.025)}
 
 <!-- DASHBOARD -->
 <div id="page-dashboard" class="page">
+  <!-- MÉTRICAS COLORIDAS -->
   <div class="grid4" style="margin-bottom:20px">
-    <div class="metric">
+    <div class="metric" style="background:linear-gradient(135deg,rgba(91,141,238,.18),rgba(91,141,238,.06));border-color:rgba(91,141,238,.3)">
+      <div class="metric-bar" style="background:linear-gradient(90deg,transparent,#5b8dee,transparent)"></div>
+      <div class="metric-glow" style="background:radial-gradient(circle,rgba(91,141,238,.15),transparent 70%)"></div>
+      <div class="m-lbl" style="color:rgba(91,141,238,.7)">📋 Total de Pedidos</div>
+      <div class="m-val" id="d-pedidos" style="color:#7AAAF5;font-size:34px">0</div>
+      <div class="m-sub" style="color:#5b8dee">realizados</div>
+    </div>
+    <div class="metric" style="background:linear-gradient(135deg,rgba(76,175,114,.18),rgba(76,175,114,.06));border-color:rgba(76,175,114,.3)">
+      <div class="metric-bar" style="background:linear-gradient(90deg,transparent,#4caf72,transparent)"></div>
+      <div class="metric-glow" style="background:radial-gradient(circle,rgba(76,175,114,.15),transparent 70%)"></div>
+      <div class="m-lbl" style="color:rgba(76,175,114,.7)">💰 Faturamento Total</div>
+      <div class="m-val" id="d-fat" style="color:#6dc87d;font-size:22px">R$ 0,00</div>
+      <div class="m-sub" style="color:#4caf72">acumulado</div>
+    </div>
+    <div class="metric" style="background:linear-gradient(135deg,rgba(212,168,67,.18),rgba(212,168,67,.06));border-color:rgba(212,168,67,.3)">
       <div class="metric-bar" style="background:linear-gradient(90deg,transparent,var(--g1),transparent)"></div>
-      <div class="metric-glow" style="background:radial-gradient(circle,rgba(212,168,67,.08),transparent 70%)"></div>
-      <div class="m-lbl">Total de Pedidos</div><div class="m-val" id="d-pedidos">0</div><div class="m-sub" style="color:var(--g1)">realizados</div>
+      <div class="metric-glow" style="background:radial-gradient(circle,rgba(212,168,67,.15),transparent 70%)"></div>
+      <div class="m-lbl" style="color:rgba(212,168,67,.7)">🛒 Itens Vendidos</div>
+      <div class="m-val" id="d-itens" style="color:var(--g2);font-size:34px">0</div>
+      <div class="m-sub" style="color:var(--g1)">unidades</div>
     </div>
-    <div class="metric">
-      <div class="metric-bar" style="background:linear-gradient(90deg,transparent,var(--g1),transparent)"></div>
-      <div class="metric-glow" style="background:radial-gradient(circle,rgba(212,168,67,.08),transparent 70%)"></div>
-      <div class="m-lbl">Faturamento Total</div><div class="m-val gold" id="d-fat" style="font-size:22px">R$ 0,00</div><div class="m-sub" style="color:var(--g1)">acumulado</div>
-    </div>
-    <div class="metric">
-      <div class="metric-bar" style="background:linear-gradient(90deg,transparent,var(--green),transparent)"></div>
-      <div class="metric-glow" style="background:radial-gradient(circle,rgba(76,175,114,.07),transparent 70%)"></div>
-      <div class="m-lbl">Itens Vendidos</div><div class="m-val green" id="d-itens">0</div><div class="m-sub" style="color:var(--green)">unidades</div>
-    </div>
-    <div class="metric">
-      <div class="metric-bar" style="background:linear-gradient(90deg,transparent,var(--blue),transparent)"></div>
-      <div class="metric-glow" style="background:radial-gradient(circle,rgba(91,141,238,.07),transparent 70%)"></div>
-      <div class="m-lbl">Ticket Médio</div><div class="m-val" id="d-ticket" style="font-size:22px;color:var(--blue)">R$ 0,00</div><div class="m-sub" style="color:var(--blue)">por pedido</div>
+    <div class="metric" style="background:linear-gradient(135deg,rgba(208,96,96,.18),rgba(208,96,96,.06));border-color:rgba(208,96,96,.3)">
+      <div class="metric-bar" style="background:linear-gradient(90deg,transparent,#d06060,transparent)"></div>
+      <div class="metric-glow" style="background:radial-gradient(circle,rgba(208,96,96,.15),transparent 70%)"></div>
+      <div class="m-lbl" style="color:rgba(208,96,96,.7)">🎯 Ticket Médio</div>
+      <div class="m-val" id="d-ticket" style="color:#e08080;font-size:22px">R$ 0,00</div>
+      <div class="m-sub" style="color:#d06060">por pedido</div>
     </div>
   </div>
+
+  <!-- MAIS / MENOS VENDIDOS -->
   <div class="grid2" style="margin-bottom:20px">
-    <div class="card">
-      <div class="card-title"><span class="card-title-icon">🏆</span>Mais Vendidos</div>
+    <div class="card" style="border-color:rgba(76,175,114,.2)">
+      <div class="card-title" style="color:#4caf72;border-bottom-color:rgba(76,175,114,.15)">
+        <span class="card-title-icon" style="background:rgba(76,175,114,.12);border-color:rgba(76,175,114,.2)">🏆</span>
+        Mais Vendidos
+      </div>
       <div id="d-top"><div class="empty"><span class="empty-icon">📊</span>Sem dados ainda</div></div>
     </div>
-    <div class="card">
-      <div class="card-title"><span class="card-title-icon">📉</span>Menos Vendidos</div>
+    <div class="card" style="border-color:rgba(208,96,96,.2)">
+      <div class="card-title" style="color:#d06060;border-bottom-color:rgba(208,96,96,.15)">
+        <span class="card-title-icon" style="background:rgba(208,96,96,.1);border-color:rgba(208,96,96,.2)">📉</span>
+        Menos Vendidos
+      </div>
       <div id="d-low"><div class="empty"><span class="empty-icon">😴</span>Sem dados ainda</div></div>
     </div>
   </div>
-  <div class="card">
-    <div class="card-title"><span class="card-title-icon">📊</span>Vendas por Produto (Qtd)</div>
+
+  <!-- GRÁFICO -->
+  <div class="card" style="border-color:rgba(91,141,238,.2)">
+    <div class="card-title" style="color:#5b8dee;border-bottom-color:rgba(91,141,238,.15)">
+      <span class="card-title-icon" style="background:rgba(91,141,238,.1);border-color:rgba(91,141,238,.2)">📊</span>
+      Vendas por Produto
+    </div>
     <div id="d-chart"><div class="empty"><span class="empty-icon">📈</span>Sem dados ainda</div></div>
   </div>
 </div>
@@ -525,7 +547,6 @@ function rDash(){
   document.getElementById('d-itens').textContent=itens;
   document.getElementById('d-ticket').textContent=V.length?fmt(fat/V.length):'R$ 0,00';
 
-  // Contagem por produto
   const contagem={};
   V.forEach(v=>v.itens.forEach(it=>{contagem[it.nome]=(contagem[it.nome]||0)+it.qtd;}));
   const sorted=Object.entries(contagem).sort((a,b)=>b[1]-a[1]);
@@ -536,36 +557,77 @@ function rDash(){
   }
 
   const maxQ=sorted[0][1];
+  const totalItens=sorted.reduce((s,[,q])=>s+q,0);
 
-  // Mais vendidos
+  // Cores das barras do ranking (verde para top, vermelho para low)
+  const greenColors=['rgba(76,175,114,.2)','rgba(76,175,114,.14)','rgba(76,175,114,.1)','rgba(76,175,114,.07)','rgba(76,175,114,.05)','rgba(76,175,114,.04)'];
+  const greenText=['#6dc87d','#6dc87d','#5ab86a','#4aaa5a','#3a9a4a','#2a8a3a'];
+
+  // Mais vendidos — verde
   document.getElementById('d-top').innerHTML=sorted.slice(0,6).map(([nm,q],i)=>{
-    const rankCls=i===0?'r1':i===1?'r2':i===2?'r3':'rn';
     const pct=Math.round(q/maxQ*100);
-    return`<div class="top-item"><div class="top-rank ${rankCls}">${i+1}</div><span class="top-name">${nm}</span><div class="top-bar-bg"><div class="top-bar-fill" style="width:${pct}%"></div></div><span class="top-qty">${q}</span></div>`;
+    const share=Math.round(q/totalItens*100);
+    const medals=['🥇','🥈','🥉','4°','5°','6°'];
+    return`<div class="top-item" style="background:${greenColors[i]};border-radius:10px;margin:3px 0;padding:10px 12px">
+      <div style="width:28px;height:28px;border-radius:7px;background:rgba(76,175,114,.2);border:1px solid rgba(76,175,114,.3);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">${medals[i]}</div>
+      <span style="flex:1;font-size:13px;color:var(--t1);font-weight:600">${nm}</span>
+      <div style="flex:2;background:rgba(0,0,0,.2);border-radius:4px;height:5px;overflow:hidden;margin:0 10px">
+        <div style="width:${pct}%;height:100%;background:linear-gradient(90deg,#4caf72,#6dc87d);border-radius:4px;transition:width .7s cubic-bezier(.34,1.2,.64,1)"></div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:13px;font-weight:800;color:${greenText[i]}">${q}</div>
+        <div style="font-size:10px;color:var(--t3)">${share}%</div>
+      </div>
+    </div>`;
   }).join('');
 
-  // Menos vendidos
+  // Menos vendidos — vermelho
   const lowSorted=[...sorted].reverse();
-  document.getElementById('d-low').innerHTML=lowSorted.slice(0,6).map(([nm,q])=>`<div class="low-item"><span class="low-name">${nm}</span><span class="low-qty">${q} un.</span></div>`).join('');
+  document.getElementById('d-low').innerHTML=lowSorted.slice(0,6).map(([nm,q],i)=>{
+    const pct=Math.round(q/maxQ*100)||2;
+    const redColors=['rgba(208,96,96,.18)','rgba(208,96,96,.13)','rgba(208,96,96,.09)','rgba(208,96,96,.06)','rgba(208,96,96,.04)','rgba(208,96,96,.03)'];
+    return`<div class="low-item" style="background:${redColors[i]};border-radius:10px;margin:3px 0;padding:10px 12px">
+      <span style="flex:1;font-size:13px;color:var(--t2);font-weight:500">${nm}</span>
+      <div style="flex:2;background:rgba(0,0,0,.2);border-radius:4px;height:5px;overflow:hidden;margin:0 10px">
+        <div style="width:${pct}%;height:100%;background:linear-gradient(90deg,#a03030,#d06060);border-radius:4px;transition:width .7s cubic-bezier(.34,1.2,.64,1)"></div>
+      </div>
+      <span style="font-size:13px;font-weight:800;color:#e08080;flex-shrink:0">${q} un.</span>
+    </div>`;
+  }).join('');
 
-  // Gráfico de barras
+  // Gráfico colorido — azul gradiente por posição
   const chartData=sorted.slice(0,10);
   const maxV=chartData[0][1];
   const BAR_H=180;
-  document.getElementById('d-chart').innerHTML=`<div style="display:flex;gap:0;align-items:flex-end;height:${BAR_H+40}px;padding-bottom:30px;position:relative">
-    ${chartData.map(([nm,q])=>{
-      const h=Math.max(8,Math.round(q/maxV*BAR_H));
-      const pct=Math.round(q/V.reduce((s,v)=>s+v.itens.reduce((a,i)=>a+i.qtd,0),0)*100);
-      return`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:default" title="${nm}: ${q} unidades">
-        <div style="font-size:10px;color:var(--g1);font-weight:700">${q}</div>
-        <div style="width:80%;background:var(--s4);border-radius:6px 6px 0 0;height:${BAR_H}px;position:relative;overflow:hidden">
-          <div style="position:absolute;bottom:0;left:0;right:0;height:${h}px;background:linear-gradient(180deg,var(--g2),var(--g3));border-radius:6px 6px 0 0;transition:height .6s cubic-bezier(.34,1.2,.64,1);box-shadow:0 0 12px rgba(212,168,67,.2)"></div>
-        </div>
-        <div style="font-size:9px;color:var(--t3);text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px">${nm.split(' ').slice(0,2).join(' ')}</div>
-        <div style="font-size:9px;color:var(--t3)">${pct}%</div>
-      </div>`;
-    }).join('')}
-  </div>`;
+  const barColors=[
+    'linear-gradient(180deg,#7AAAF5,#4470d0)',
+    'linear-gradient(180deg,#6dc87d,#3a9a4a)',
+    'linear-gradient(180deg,#F2D080,#A07830)',
+    'linear-gradient(180deg,#e08080,#a03030)',
+    'linear-gradient(180deg,#a78bfa,#6d3fa0)',
+    'linear-gradient(180deg,#f97316,#c05010)',
+    'linear-gradient(180deg,#22d3ee,#0e7490)',
+    'linear-gradient(180deg,#f472b6,#be185d)',
+    'linear-gradient(180deg,#a3e635,#4d7c0f)',
+    'linear-gradient(180deg,#fbbf24,#92400e)',
+  ];
+  const glowColors=['rgba(91,141,238,.3)','rgba(76,175,114,.3)','rgba(212,168,67,.3)','rgba(208,96,96,.3)','rgba(167,139,250,.3)','rgba(249,115,22,.3)','rgba(34,211,238,.3)','rgba(244,114,182,.3)','rgba(163,230,53,.3)','rgba(251,191,36,.3)'];
+
+  document.getElementById('d-chart').innerHTML=`
+    <div style="display:flex;align-items:flex-end;gap:8px;height:${BAR_H+60}px;padding-bottom:46px;padding-top:20px;position:relative">
+      ${chartData.map(([nm,q],idx)=>{
+        const h=Math.max(10,Math.round(q/maxV*BAR_H));
+        const pct=Math.round(q/totalItens*100);
+        return`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:default" title="${nm}: ${q} unidades (${pct}%)">
+          <div style="font-size:11px;color:#fff;font-weight:800;text-shadow:0 1px 4px rgba(0,0,0,.5)">${q}</div>
+          <div style="width:85%;background:rgba(255,255,255,.05);border-radius:8px 8px 0 0;height:${BAR_H}px;position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.06)">
+            <div style="position:absolute;bottom:0;left:0;right:0;height:${h}px;background:${barColors[idx%barColors.length]};border-radius:8px 8px 0 0;box-shadow:0 0 16px ${glowColors[idx%glowColors.length]};transition:height .7s cubic-bezier(.34,1.2,.64,1) ${idx*0.06}s"></div>
+          </div>
+          <div style="font-size:9px;color:var(--t3);text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px">${nm.split(' ').slice(-2).join(' ')}</div>
+          <div style="font-size:9px;font-weight:700;color:var(--t2)">${pct}%</div>
+        </div>`;
+      }).join('')}
+    </div>`;
 }
 
 // ---- ESTOQUE ----
