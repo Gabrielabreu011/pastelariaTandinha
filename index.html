@@ -360,8 +360,7 @@ tr:hover td{background:rgba(255,255,255,.025)}
   <div class="grid2">
     <div class="card">
       <div class="card-title"><span class="card-title-icon">➕</span>Adicionar ao Cardápio</div>
-      <div class="form-row">
-        <div style="max-width:130px"><label>Código</label><input id="novoCodigo" type="text" placeholder="Ex: 07"></div>
+      <div class="form-row full">
         <div><label>Nome do Produto</label><input id="nomeItem" type="text" placeholder="Ex: Pastel de Palmito"></div>
       </div>
       <div class="form-row">
@@ -657,10 +656,11 @@ function rMov(){
 
 // ---- CARDÁPIO ----
 window.salvarItem=async function(){
-  const cd=document.getElementById('novoCodigo').value.trim(),nm=document.getElementById('nomeItem').value.trim(),ct=document.getElementById('catItem').value,pr=parseFloat(document.getElementById('precoItem').value),es=parseInt(document.getElementById('estoqueItem').value)||0,mn=parseInt(document.getElementById('minEstoque').value)||5;
-  if(!cd||!nm||isNaN(pr)){toast('Preencha código, nome e preço!','error');return;}
-  if(C.find(c=>c.codigo===cd)){toast(`Código "${cd}" já existe!`,'error');return;}
-  try{await addDoc(collection(db,'cardapio'),{codigo:cd,nome:nm,categoria:ct,preco:pr,estoque:es,minEstoque:mn,timestamp:serverTimestamp()});document.getElementById('novoCodigo').value='';document.getElementById('nomeItem').value='';document.getElementById('precoItem').value='';toast(`✓ "${nm}" adicionado!`);}catch(e){toast('Erro ao salvar.','error');}
+  const nm=document.getElementById('nomeItem').value.trim(),ct=document.getElementById('catItem').value,pr=parseFloat(document.getElementById('precoItem').value),es=parseInt(document.getElementById('estoqueItem').value)||0,mn=parseInt(document.getElementById('minEstoque').value)||5;
+  if(!nm||isNaN(pr)){toast('Preencha nome e preço!','error');return;}
+  const maxCod=C.length?Math.max(...C.map(c=>parseInt(c.codigo)||0)):0;
+  const cd=String(maxCod+1).padStart(2,'0');
+  try{await addDoc(collection(db,'cardapio'),{codigo:cd,nome:nm,categoria:ct,preco:pr,estoque:es,minEstoque:mn,timestamp:serverTimestamp()});document.getElementById('nomeItem').value='';document.getElementById('precoItem').value='';toast(`✓ "${nm}" adicionado!`);}catch(e){toast('Erro ao salvar.','error');}
 };
 window.excluirItem=async function(id){
   const p=C.find(c=>c.id===id);if(!confirm(`Excluir "${p.nome}"?`))return;
