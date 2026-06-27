@@ -406,6 +406,39 @@ tr:hover td{background:rgba(255,255,255,.025)}
   </div>
 </div>
 
+<!-- MODAL EDITAR ITEM CARDÁPIO -->
+<div class="modal-bg" id="modalItemBg">
+  <div class="modal">
+    <div class="modal-title">
+      ✏️ Editar Item do Cardápio
+      <button class="modal-close" onclick="fecharModalItem()">✕</button>
+    </div>
+    <input type="hidden" id="editItemId">
+    <div class="form-row full" style="margin-bottom:13px">
+      <div><label>Nome do Produto</label><input id="editItemNome" type="text" placeholder="Nome do produto"></div>
+    </div>
+    <div class="form-row">
+      <div><label>Categoria</label>
+        <select id="editItemCat">
+          <option>Pastel Salgado</option><option>Pastel Doce</option><option>Bebida</option><option>Acompanhamento</option>
+        </select>
+      </div>
+      <div><label>Preço (R$)</label><input id="editItemPreco" type="number" step="0.50" min="0"></div>
+    </div>
+    <div class="form-row">
+      <div>
+        <label>Estoque Atual</label>
+        <input id="editItemEstoque" type="number" min="0" style="font-size:18px;font-weight:800;color:#D4A843">
+      </div>
+      <div><label>Estoque Mínimo (alerta)</label><input id="editItemMin" type="number" min="0"></div>
+    </div>
+    <div class="actions">
+      <button class="btn btn-ghost" onclick="fecharModalItem()">Cancelar</button>
+      <button class="btn btn-gold" onclick="salvarEditItem()">💾 Salvar Alterações</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script type="module">
@@ -670,8 +703,47 @@ function rCard(){
   const el=document.getElementById('tabelaCardapio');
   if(!C.length){el.innerHTML='<div class="empty"><span class="empty-icon">📖</span>Nenhum item cadastrado</div>';return;}
   const cats=[...new Set(C.map(i=>i.categoria))];
-  el.innerHTML=cats.map(cat=>`<div style="margin-bottom:24px"><div class="cat-label">${cat}</div><table><thead><tr><th>Nome</th><th>Preço</th><th>Estoque</th><th></th></tr></thead><tbody>${C.filter(i=>i.categoria===cat).map(i=>`<tr><td style="font-weight:600;color:var(--t1)">${i.nome}</td><td style="font-weight:800;color:var(--g1);font-size:14px">${fmt(i.preco)}</td><td style="color:var(--t2)">${i.estoque}</td><td><button class="btn btn-danger btn-sm" onclick="excluirItem('${i.id}')">🗑 Excluir</button></td></tr>`).join('')}</tbody></table></div>`).join('');
+  el.innerHTML=cats.map(cat=>`<div style="margin-bottom:24px"><div class="cat-label">${cat}</div><table><thead><tr><th>Nome</th><th>Preço</th><th>Estoque</th><th>Mínimo</th><th>Ações</th></tr></thead><tbody>${C.filter(i=>i.categoria===cat).map(i=>{
+    const ecor=i.estoque<=0?'var(--red)':i.estoque<=i.minEstoque?'var(--g1)':'#6dc87d';
+    return \`<tr>
+      <td style="font-weight:600;color:var(--t1)">\${i.nome}</td>
+      <td style="font-weight:800;color:var(--g1);font-size:14px">\${fmt(i.preco)}</td>
+      <td><b style="font-size:15px;color:\${ecor}">\${i.estoque}</b></td>
+      <td style="color:var(--t3)">\${i.minEstoque}</td>
+      <td><div style="display:flex;gap:6px">
+        <button class="btn btn-edit btn-sm" onclick="abrirEditItem('\${i.id}')">✏️ Editar</button>
+        <button class="btn btn-danger btn-sm" onclick="excluirItem('\${i.id}')">🗑</button>
+      </div></td>
+    </tr>\`;
+  }).join('')}</tbody></table></div>`).join('');
 }
+
+window.abrirEditItem=function(id){
+  const p=C.find(c=>c.id===id);if(!p)return;
+  document.getElementById('editItemId').value=id;
+  document.getElementById('editItemNome').value=p.nome;
+  document.getElementById('editItemPreco').value=p.preco;
+  document.getElementById('editItemEstoque').value=p.estoque;
+  document.getElementById('editItemMin').value=p.minEstoque;
+  document.getElementById('editItemCat').value=p.categoria;
+  document.getElementById('modalItemBg').classList.add('open');
+};
+window.fecharModalItem=()=>document.getElementById('modalItemBg').classList.remove('open');
+document.getElementById('modalItemBg').addEventListener('click',e=>{if(e.target===document.getElementById('modalItemBg'))fecharModalItem();});
+
+window.salvarEditItem=async function(){
+  const id=document.getElementById('editItemId').value;
+  const nm=document.getElementById('editItemNome').value.trim();
+  const pr=parseFloat(document.getElementById('editItemPreco').value);
+  const es=parseInt(document.getElementById('editItemEstoque').value)||0;
+  const mn=parseInt(document.getElementById('editItemMin').value)||0;
+  const ct=document.getElementById('editItemCat').value;
+  if(!nm||isNaN(pr)){toast('Preencha nome e preço!','error');return;}
+  try{
+    await updateDoc(doc(db,'cardapio',id),{nome:nm,preco:pr,estoque:es,minEstoque:mn,categoria:ct});
+    fecharModalItem();toast('\u2713 Item atualizado!');
+  }catch(e){toast('Erro ao salvar.','error');}
+};
 </script>
 </body>
 </html>
