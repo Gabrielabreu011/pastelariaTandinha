@@ -84,7 +84,7 @@ function fillSels() {
 // ---- LISTENERS FIRESTORE ----
 db.collection('cardapio').orderBy('codigo').onSnapshot(function(s) {
   C = s.docs.map(function(d) { return Object.assign({id: d.id}, d.data()); });
-  fillSels(); rCard(); rEst(); dbOk(true);
+  fillSels(); rCard(); rEst(); verificarAlertas(); dbOk(true);
 }, function() { dbOk(false); });
 
 db.collection('vendas').orderBy('timestamp','desc').onSnapshot(function(s) {
@@ -105,9 +105,28 @@ window.adicionarItem = function() {
   if (!id) return;
   var p = C.find(function(c) { return c.id === id; });
   var qtd = parseInt(document.getElementById('qtdItem').value) || 1;
+
+  // Verifica estoque disponível
+  var jaNoCarrinho = 0;
   var ex = IP.find(function(i) { return i.id === id; });
+  if (ex) jaNoCarrinho = ex.qtd;
+
+  if (p.estoque <= 0) {
+    toast('❌ "' + p.nome + '" está ESGOTADO!', 'error');
+    document.getElementById('selItem').value = '';
+    return;
+  }
+  if (jaNoCarrinho + qtd > p.estoque) {
+    toast('⚠️ Estoque insuficiente! Disponível: ' + (p.estoque - jaNoCarrinho) + ' un.', 'error');
+    document.getElementById('selItem').value = '';
+    return;
+  }
+  if (p.estoque <= p.minEstoque) {
+    toast('⚠️ Atenção: "' + p.nome + '" com estoque baixo! (' + p.estoque + ' restantes)', 'error');
+  }
+
   if (ex) ex.qtd += qtd;
-  else IP.push({id: id, nome: p.nome, preco: p.preco, qtd: qtd});
+  else IP.push({id: id, nome: p.nome, preco: p.preco, qtd: qtd, estoqueMax: p.estoque});
   document.getElementById('selItem').value = '';
   document.getElementById('qtdItem').value = '1';
   rIP();
@@ -554,3 +573,163 @@ function rCard() {
   });
   el.innerHTML = html;
 }
+
+// ==========================================
+// ALERTAS DE ESTOQUE
+// ==========================================
+function verificarAlertas() {
+  var criticos  = C.filter(function(p) { return p.estoque <= 0; });
+  var baixos    = C.filter(function(p) { return p.estoque > 0 && p.estoque <= p.minEstoque; });
+  var container = document.getElementById('alertasEstoque');
+  if (!container) return;
+
+  if (!criticos.length && !baixos.length) {
+    container.innerHTML = '';
+    container.style.display = 'none';
+    return;
+  }
+
+  container.style.display = 'block';
+  var html = '';
+
+  if (criticos.length) {
+    html += '<div class="alerta alerta-critico">';
+    html += '<div class="alerta-icon">🚨</div>';
+    html += '<div class="alerta-body">';
+    html += '<div class="alerta-titulo">Produtos ESGOTADOS — Pedidos bloqueados!</div>';
+    html += '<div class="alerta-itens">' + criticos.map(function(p) {
+      return '<span class="alerta-tag alerta-tag-red">' + p.nome + ' (0 un.)</span>';
+    }).join('') + '</div></div></div>';
+  }
+
+  if (baixos.length) {
+    html += '<div class="alerta alerta-baixo">';
+    html += '<div class="alerta-icon">⚠️</div>';
+    html += '<div class="alerta-body">';
+    html += '<div class="alerta-titulo">Estoque Baixo — Reabasteça em breve</div>';
+    html += '<div class="alerta-itens">' + baixos.map(function(p) {
+      return '<span class="alerta-tag alerta-tag-yellow">' + p.nome + ' (' + p.estoque + ' un.)</span>';
+    }).join('') + '</div></div></div>';
+  }
+
+  container.innerHTML = html;
+}
+
+// Atualiza alertas sempre que cardápio muda
+
+
+
+// ==========================================
+// EXPORTAR PARA EXCEL (.csv bem formatado)
+// ==========================================
+window.exportarVendas = function() {
+  if (!V.length) { toast('Nenhuma venda para exportar!', 'error'); return; }
+
+  var linhas = [];
+  // Cabeçalho bonito
+  linhas.push(['PASTELARIA TANDINHA — RELATÓRIO DE VENDAS']);
+  linhas.push(['Gerado em: ' + new Date().toLocaleDateString('pt-BR') + ' às ' + new Date().toLocaleTimeString('pt-BR')]);
+  linhas.push([]);
+  linhas.push(['RESUMO']);
+  var fat = V.reduce(function(s,v){return s+v.total;},0);
+  var itens = V.reduce(function(s,v){return s+v.itens.reduce(function(a,i){return a+i.qtd;},0);},0);
+  linhas.push(['Total de Pedidos', V.length]);
+  linhas.push(['Faturamento Total', 'R$ ' + fat.toFixed(2).replace('.',',')]);
+  linhas.push(['Ticket Médio', 'R$ ' + (fat/V.length).toFixed(2).replace('.',',')]);
+  linhas.push(['Itens Vendidos', itens]);
+  linhas.push([]);
+  linhas.push(['PEDIDOS DETALHADOS']);
+  linhas.push(['Data', 'Hora', 'Cliente', 'Observação', 'Itens', 'Qtd Total', 'Total (R$)']);
+
+  V.forEach(function(v) {
+    var itensStr = v.itens.map(function(i){return i.qtd+'x '+i.nome;}).join(' | ');
+    var qtdTotal = v.itens.reduce(function(a,i){return a+i.qtd;},0);
+    linhas.push([
+      v.data || '',
+      v.hora || '',
+      v.cliente,
+      v.obs || '',
+      itensStr,
+      qtdTotal,
+      'R$ ' + v.total.toFixed(2).replace('.',',')
+    ]);
+  });
+
+  linhas.push([]);
+  linhas.push(['VENDAS POR PRODUTO']);
+  linhas.push(['Produto', 'Quantidade Vendida', 'Faturamento (R$)', 'Participação (%)']);
+  var cont = {}, fatPor = {};
+  V.forEach(function(v){v.itens.forEach(function(i){
+    cont[i.nome]   = (cont[i.nome]||0) + i.qtd;
+    fatPor[i.nome] = (fatPor[i.nome]||0) + i.preco*i.qtd;
+  });});
+  var sorted = Object.entries(cont).sort(function(a,b){return b[1]-a[1];});
+  sorted.forEach(function(x){
+    var pct = Math.round(x[1]/itens*100);
+    linhas.push([
+      x[0],
+      x[1],
+      'R$ ' + fatPor[x[0]].toFixed(2).replace('.',','),
+      pct + '%'
+    ]);
+  });
+
+  linhas.push([]);
+  linhas.push(['ESTOQUE ATUAL']);
+  linhas.push(['Produto', 'Categoria', 'Estoque Atual', 'Estoque Mínimo', 'Status', 'Preço (R$)']);
+  C.forEach(function(p){
+    var status = p.estoque <= 0 ? 'ESGOTADO' : p.estoque <= p.minEstoque ? 'BAIXO' : 'OK';
+    linhas.push([p.nome, p.categoria, p.estoque, p.minEstoque, status, 'R$ '+p.preco.toFixed(2).replace('.',',')]);
+  });
+
+  // Monta CSV com BOM para Excel reconhecer UTF-8
+  var bom = '\uFEFF';
+  var csv = bom + linhas.map(function(row){
+    return row.map(function(cell){
+      var s = String(cell === undefined || cell === null ? '' : cell);
+      if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+        s = '"' + s.replace(/"/g,'""') + '"';
+      }
+      return s;
+    }).join(';'); // ponto-e-vírgula para Excel BR
+  }).join('\r\n');
+
+  var blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href     = url;
+  a.download = 'pastelaria-tandinha-' + new Date().toISOString().slice(0,10) + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('✓ Planilha exportada com sucesso!');
+};
+
+window.exportarEstoque = function() {
+  if (!C.length) { toast('Nenhum produto no estoque!', 'error'); return; }
+  var linhas = [];
+  linhas.push(['PASTELARIA TANDINHA — ESTOQUE']);
+  linhas.push(['Gerado em: ' + new Date().toLocaleDateString('pt-BR') + ' às ' + new Date().toLocaleTimeString('pt-BR')]);
+  linhas.push([]);
+  linhas.push(['Produto','Categoria','Estoque Atual','Estoque Mínimo','Status','Preço (R$)']);
+  C.forEach(function(p){
+    var status = p.estoque <= 0 ? 'ESGOTADO' : p.estoque <= p.minEstoque ? 'BAIXO' : 'OK';
+    linhas.push([p.nome, p.categoria, p.estoque, p.minEstoque, status, 'R$ '+p.preco.toFixed(2).replace('.',',')]);
+  });
+  var bom = '\uFEFF';
+  var csv = bom + linhas.map(function(row){
+    return row.map(function(cell){
+      var s = String(cell===undefined||cell===null?'':cell);
+      if(s.includes(',')||s.includes('"')||s.includes('\n')) s='"'+s.replace(/"/g,'""')+'"';
+      return s;
+    }).join(';');
+  }).join('\r\n');
+  var blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href=url; a.download='estoque-tandinha-'+new Date().toISOString().slice(0,10)+'.csv';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+  toast('✓ Estoque exportado!');
+};
