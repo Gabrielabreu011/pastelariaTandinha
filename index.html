@@ -9,8 +9,8 @@
 <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
 <link rel="dns-prefetch" href="https://www.gstatic.com">
 <link rel="dns-prefetch" href="https://firestore.googleapis.com">
-<link rel="preload" href="https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js" as="script" crossorigin>
-<link rel="preload" href="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js" as="script" crossorigin>
+<link rel="preload" href="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js" as="script" crossorigin>
+<link rel="preload" href="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js" as="script" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -459,10 +459,17 @@ tr:hover td{background:rgba(255,255,255,.025)}
 
 <div class="toast" id="toast"></div>
 
-<script type="module">
-import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import{getFirestore,collection,doc,addDoc,updateDoc,deleteDoc,onSnapshot,query,orderBy,serverTimestamp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-const db=getFirestore(initializeApp({apiKey:"AIzaSyA-aQ6QYP4PKf5-YYx-1oRE-xrnjqA2fPw",authDomain:"pastelaria-a58b7.firebaseapp.com",projectId:"pastelaria-a58b7",storageBucket:"pastelaria-a58b7.firebasestorage.app",messagingSenderId:"891299430998",appId:"1:891299430998:web:23e625096918816c63b1f7"}));
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+function initializeApp(cfg){return firebase.initializeApp(cfg);}
+function getFirestore(app){return app.firestore();}
+firebase.initializeApp({apiKey:"AIzaSyA-aQ6QYP4PKf5-YYx-1oRE-xrnjqA2fPw",authDomain:"pastelaria-a58b7.firebaseapp.com",projectId:"pastelaria-a58b7",storageBucket:"pastelaria-a58b7.firebasestorage.app",messagingSenderId:"891299430998",appId:"1:891299430998:web:23e625096918816c63b1f7"});
+const db=firebase.firestore();
+// Compat wrappers to keep same API
+const col=(name)=>db.collection(name);
+const docRef=(colName,id)=>db.collection(colName).doc(id);
+const ST=()=>FS.FieldValue.ST();
 
 let C=[],V=[],M=[],IP=[],editId=null,editItensLocal=[];
 const fmt=v=>v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
@@ -493,9 +500,9 @@ function fillSels(){
   s2.value=v2;
 }
 
-onSnapshot(query(collection(db,'cardapio'),orderBy('codigo')),s=>{C=s.docs.map(d=>({id:d.id,...d.data()}));fillSels();rCard();rEst();dbOk(true);},()=>dbOk(false));
-onSnapshot(query(collection(db,'vendas'),orderBy('timestamp','desc')),s=>{V=s.docs.map(d=>({id:d.id,...d.data()}));rUlt();rVen();rDash();dbOk(true);},()=>dbOk(false));
-onSnapshot(query(collection(db,'movimentacoes'),orderBy('timestamp','desc')),s=>{M=s.docs.map(d=>({id:d.id,...d.data()}));rMov();dbOk(true);},()=>dbOk(false));
+db.collection('cardapio').orderBy('codigo').onSnapshot(s=>{C=s.docs.map(d=>({id:d.id,...d.data()}));fillSels();rCard();rEst();dbOk(true);},()=>dbOk(false));
+db.collection('vendas').orderBy('timestamp','desc').onSnapshot(s=>{V=s.docs.map(d=>({id:d.id,...d.data()}));rUlt();rVen();rDash();dbOk(true);},()=>dbOk(false));
+db.collection('movimentacoes').orderBy('timestamp','desc').onSnapshot(s=>{M=s.docs.map(d=>({id:d.id,...d.data()}));rMov();dbOk(true);},()=>dbOk(false));
 
 // ---- PEDIDOS ----
 window.adicionarItem=function(){
@@ -522,8 +529,8 @@ window.finalizarPedido=async function(){
   const btn=document.getElementById('btnFinalizar');btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Salvando...';
   try{
     const total=IP.reduce((s,i)=>s+i.preco*i.qtd,0);
-    await addDoc(collection(db,'vendas'),{cliente:nome,obs:obs||'',itens:IP.map(i=>({nome:i.nome,preco:i.preco,qtd:i.qtd})),total,hora:hora(),data:new Date().toLocaleDateString('pt-BR'),timestamp:serverTimestamp()});
-    for(const it of IP){const p=C.find(c=>c.id===it.id);if(p){const nv=Math.max(0,p.estoque-it.qtd);await updateDoc(doc(db,'cardapio',it.id),{estoque:nv});await addDoc(collection(db,'movimentacoes'),{tipo:'saida',produto:p.nome,qtd:it.qtd,antes:p.estoque,depois:nv,motivo:`Pedido de ${nome}`,hora:hora(),timestamp:serverTimestamp()});}}
+    await db.collection('vendas').add({cliente:nome,obs:obs||'',itens:IP.map(i=>({nome:i.nome,preco:i.preco,qtd:i.qtd})),total,hora:hora(),data:new Date().toLocaleDateString('pt-BR'),timestamp:ST()});
+    for(const it of IP){const p=C.find(c=>c.id===it.id);if(p){const nv=Math.max(0,p.estoque-it.qtd);await db.collection('cardapio').doc(it.id).update({estoque:nv});await db.collection('movimentacoes').add({tipo:'saida',produto:p.nome,qtd:it.qtd,antes:p.estoque,depois:nv,motivo:`Pedido de ${nome}`,hora:hora(),timestamp:ST()});}}
     IP=[];document.getElementById('nomeCliente').value='';document.getElementById('mesaObs').value='';rIP();toast(`✓ Pedido de ${nome} finalizado! Total: ${fmt(total)}`);
   }catch(e){toast('Erro ao salvar. Verifique a conexão.','error');}
   btn.disabled=false;btn.innerHTML='✓ Finalizar Pedido';
@@ -578,14 +585,14 @@ window.salvarEdicao=async function(){
   if(!editItensLocal.length){toast('Adicione pelo menos um item!','error');return;}
   const total=editItensLocal.reduce((s,i)=>s+i.preco*i.qtd,0);
   try{
-    await updateDoc(doc(db,'vendas',editId),{cliente:nome,obs:obs||'',itens:editItensLocal,total});
+    await db.collection('vendas').doc(editId).update({cliente:nome,obs:obs||'',itens:editItensLocal,total});
     fecharModal();toast('✓ Pedido atualizado!');
   }catch(e){toast('Erro ao salvar.','error');}
 };
 
 window.excluirPedido=async function(id,nome){
   if(!confirm(`Excluir o pedido de "${nome}"? Esta ação não pode ser desfeita.`))return;
-  try{await deleteDoc(doc(db,'vendas',id));toast(`Pedido de ${nome} excluído.`);}
+  try{await db.collection('vendas').doc(id).delete();toast(`Pedido de ${nome} excluído.`);}
   catch(e){toast('Erro ao excluir.','error');}
 };
 
@@ -728,8 +735,8 @@ window.entradaEstoque=async function(){
   const qtd=parseInt(document.getElementById('qtdEstoque').value)||0;if(qtd<=0){toast('Quantidade inválida!','error');return;}
   const obs=document.getElementById('obsEstoque').value.trim()||'Entrada manual',p=C.find(c=>c.id===id);
   try{
-    const nv=p.estoque+qtd;await updateDoc(doc(db,'cardapio',id),{estoque:nv});
-    await addDoc(collection(db,'movimentacoes'),{tipo:'entrada',produto:p.nome,qtd,antes:p.estoque,depois:nv,motivo:obs,hora:hora(),timestamp:serverTimestamp()});
+    const nv=p.estoque+qtd;await db.collection('cardapio').doc(id).update({estoque:nv});
+    await db.collection('movimentacoes').add({tipo:'entrada',produto:p.nome,qtd,antes:p.estoque,depois:nv,motivo:obs,hora:hora(),timestamp:ST()});
     document.getElementById('selEstoque').value='';document.getElementById('qtdEstoque').value='10';document.getElementById('obsEstoque').value='';
     toast(`✓ ${qtd}× "${p.nome}" adicionado!`);
   }catch(e){toast('Erro ao registrar.','error');}
@@ -753,11 +760,11 @@ window.salvarItem=async function(){
   if(!nm||isNaN(pr)){toast('Preencha nome e preço!','error');return;}
   const maxCod=C.length?Math.max(...C.map(c=>parseInt(c.codigo)||0)):0;
   const cd=String(maxCod+1).padStart(2,'0');
-  try{await addDoc(collection(db,'cardapio'),{codigo:cd,nome:nm,categoria:ct,preco:pr,estoque:es,minEstoque:mn,timestamp:serverTimestamp()});document.getElementById('nomeItem').value='';document.getElementById('precoItem').value='';toast(`✓ "${nm}" adicionado!`);}catch(e){toast('Erro ao salvar.','error');}
+  try{await db.collection('cardapio').add({codigo:cd,nome:nm,categoria:ct,preco:pr,estoque:es,minEstoque:mn,timestamp:ST()});document.getElementById('nomeItem').value='';document.getElementById('precoItem').value='';toast(`✓ "${nm}" adicionado!`);}catch(e){toast('Erro ao salvar.','error');}
 };
 window.excluirItem=async function(id){
   const p=C.find(c=>c.id===id);if(!confirm(`Excluir "${p.nome}"?`))return;
-  try{await deleteDoc(doc(db,'cardapio',id));toast(`"${p.nome}" removido.`);}catch(e){toast('Erro ao excluir.','error');}
+  try{await db.collection('cardapio').doc(id).delete();toast(`"${p.nome}" removido.`);}catch(e){toast('Erro ao excluir.','error');}
 };
 function rCard(){
   const el=document.getElementById('tabelaCardapio');
@@ -800,7 +807,7 @@ window.salvarEditItem=async function(){
   const ct=document.getElementById('editItemCat').value;
   if(!nm||isNaN(pr)){toast('Preencha nome e preço!','error');return;}
   try{
-    await updateDoc(doc(db,'cardapio',id),{nome:nm,preco:pr,estoque:es,minEstoque:mn,categoria:ct});
+    await db.collection('cardapio').doc(id).update({nome:nm,preco:pr,estoque:es,minEstoque:mn,categoria:ct});
     fecharModalItem();toast('\u2713 Item atualizado!');
   }catch(e){toast('Erro ao salvar.','error');}
 };
