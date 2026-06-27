@@ -9,8 +9,6 @@
 <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
 <link rel="dns-prefetch" href="https://www.gstatic.com">
 <link rel="dns-prefetch" href="https://firestore.googleapis.com">
-<link rel="preload" href="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js" as="script" crossorigin>
-<link rel="preload" href="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js" as="script" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -770,19 +768,24 @@ function rCard(){
   const el=document.getElementById('tabelaCardapio');
   if(!C.length){el.innerHTML='<div class="empty"><span class="empty-icon">📖</span>Nenhum item cadastrado</div>';return;}
   const cats=[...new Set(C.map(i=>i.categoria))];
-  el.innerHTML=cats.map(cat=>`<div style="margin-bottom:24px"><div class="cat-label">${cat}</div><table><thead><tr><th>Nome</th><th>Preço</th><th>Estoque</th><th>Mínimo</th><th>Ações</th></tr></thead><tbody>${C.filter(i=>i.categoria===cat).map(i=>{
-    const ecor=i.estoque<=0?'var(--red)':i.estoque<=i.minEstoque?'var(--g1)':'#6dc87d';
-    return \`<tr>
-      <td style="font-weight:600;color:var(--t1)">\${i.nome}</td>
-      <td style="font-weight:800;color:var(--g1);font-size:14px">\${fmt(i.preco)}</td>
-      <td><b style="font-size:15px;color:\${ecor}">\${i.estoque}</b></td>
-      <td style="color:var(--t3)">\${i.minEstoque}</td>
-      <td><div style="display:flex;gap:6px">
-        <button class="btn btn-edit btn-sm" onclick="abrirEditItem('\${i.id}')">✏️ Editar</button>
-        <button class="btn btn-danger btn-sm" onclick="excluirItem('\${i.id}')">🗑</button>
-      </div></td>
-    </tr>\`;
-  }).join('')}</tbody></table></div>`).join('');
+  let html='';
+  cats.forEach(cat=>{
+    html+='<div style="margin-bottom:24px"><div class="cat-label">'+cat+'</div><table><thead><tr><th>Nome</th><th>Preço</th><th>Estoque</th><th>Mínimo</th><th>Ações</th></tr></thead><tbody>';
+    C.filter(i=>i.categoria===cat).forEach(i=>{
+      const ecor=i.estoque<=0?'var(--red)':i.estoque<=i.minEstoque?'var(--g1)':'#6dc87d';
+      html+='<tr>';
+      html+='<td style="font-weight:600;color:var(--t1)">'+i.nome+'</td>';
+      html+='<td style="font-weight:800;color:var(--g1);font-size:14px">'+fmt(i.preco)+'</td>';
+      html+='<td><b style="font-size:15px;color:'+ecor+'">'+i.estoque+'</b></td>';
+      html+='<td style="color:var(--t3)">'+i.minEstoque+'</td>';
+      html+='<td><div style="display:flex;gap:6px">';
+      html+='<button class="btn btn-edit btn-sm" onclick="abrirEditItem(''+i.id+'')">✏️ Editar</button>';
+      html+='<button class="btn btn-danger btn-sm" onclick="excluirItem(''+i.id+'')">🗑</button>';
+      html+='</div></td></tr>';
+    });
+    html+='</tbody></table></div>';
+  });
+  el.innerHTML=html;
 }
 
 window.abrirEditItem=function(id){
