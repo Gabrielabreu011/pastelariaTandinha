@@ -38,6 +38,7 @@
     <div class="ntab" onclick="setTab('vendas')">🧾 Vendas<span class="tab-dot"></span></div>
     <div class="ntab" onclick="setTab('estoque')">📦 Estoque<span class="tab-dot"></span></div>
     <div class="ntab" onclick="setTab('cardapio')">📖 Cardápio<span class="tab-dot"></span></div>
+    <div class="ntab" onclick="setTab('acrescimos')">✨ Acréscimos<span class="tab-dot"></span></div>
   </div>
   <div class="topbar-right">
     <div class="db-pill offline" id="dbStatus"><span class="dot"></span><span id="dbTxt">Conectando...</span></div>
@@ -230,6 +231,35 @@
     <div class="card" style="margin-bottom:0">
       <div class="card-title"><span class="card-title-icon">📖</span>Cardápio Cadastrado</div>
       <div id="tabelaCardapio"><div class="loading"><span class="spinner"></span>Carregando...</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ACRÉSCIMOS -->
+<div id="page-acrescimos" class="page">
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title"><span class="card-title-icon">➕</span>Adicionar Acréscimo</div>
+      <div class="form-row full">
+        <div><label>Nome do Acréscimo</label><input id="nomeAcr" type="text" placeholder="Ex: Milho, Catupiry..."></div>
+      </div>
+      <div class="form-row">
+        <div><label>Preço (R$) — 0 = Grátis</label><input id="precoAcr" type="number" step="0.50" min="0" value="0" placeholder="0,00"></div>
+        <div><label>Categoria</label>
+          <select id="catAcr">
+            <option>Extras</option>
+            <option>Queijos</option>
+            <option>Carnes</option>
+            <option>Molhos</option>
+            <option>Outros</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-gold" onclick="salvarAcr()">💾 Salvar Acréscimo</button>
+    </div>
+    <div class="card" style="margin-bottom:0">
+      <div class="card-title"><span class="card-title-icon">✨</span>Acréscimos Cadastrados</div>
+      <div id="tabelaAcr"><div class="loading"><span class="spinner"></span>Carregando...</div></div>
     </div>
   </div>
 </div>
