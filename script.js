@@ -15,7 +15,7 @@ var db = firebase.firestore();
 var ST = function() { return firebase.firestore.FieldValue.serverTimestamp(); };
 
 // ---- ESTADO ----
-var C = [], V = [], M = [], IP = [], editId = null, editIL = [];
+var C = [], V = [], M = [], IP = [], editId = null, editIL = [], ACRESCIMOS = [];
 var PIE_COLORS = ['#5b8dee','#4caf72','#D4A843','#d06060','#a78bfa','#f97316','#22d3ee','#f472b6','#a3e635','#fbbf24'];
 
 // ---- UTILITÁRIOS ----
@@ -61,22 +61,53 @@ window.setTab = function(t) {
 };
 
 // ---- PREENCHER SELECTS ----
+var CAT_CORES = {
+  'Pastel Salgado':  { emoji: '🥟', label: 'SALGADO' },
+  'Pastel Doce':     { emoji: '🍬', label: 'DOCE'    },
+  'Bebida':          { emoji: '🥤', label: 'BEBIDA'  },
+  'Acompanhamento':  { emoji: '🍟', label: 'ACOMP.'  },
+};
+
 function fillSels() {
   var s1 = document.getElementById('selItem'), v1 = s1.value;
   s1.innerHTML = '<option value="">— Selecionar item —</option>';
+
+  // Agrupa por categoria
+  var cats = {};
   C.forEach(function(i) {
-    var o = document.createElement('option');
-    o.value = i.id; o.textContent = i.nome + '  —  ' + fmt(i.preco);
-    s1.appendChild(o);
+    if (!cats[i.categoria]) cats[i.categoria] = [];
+    cats[i.categoria].push(i);
+  });
+
+  // Cria optgroup por categoria com emoji
+  Object.keys(cats).forEach(function(cat) {
+    var info = CAT_CORES[cat] || { emoji: '📦', label: cat.toUpperCase() };
+    var grp = document.createElement('optgroup');
+    grp.label = info.emoji + ' ' + cat.toUpperCase();
+    cats[cat].forEach(function(i) {
+      var o = document.createElement('option');
+      o.value = i.id;
+      var estoqueAviso = i.estoque <= 0 ? ' ❌ ESGOTADO' : i.estoque <= i.minEstoque ? ' ⚠️ (' + i.estoque + ' un.)' : '';
+      o.textContent = i.nome + '  —  ' + fmt(i.preco) + estoqueAviso;
+      if (i.estoque <= 0) o.disabled = true;
+      grp.appendChild(o);
+    });
+    s1.appendChild(grp);
   });
   s1.value = v1;
 
   var s2 = document.getElementById('selEstoque'), v2 = s2.value;
   s2.innerHTML = '<option value="">— Selecionar —</option>';
-  C.forEach(function(i) {
-    var o = document.createElement('option');
-    o.value = i.id; o.textContent = i.nome;
-    s2.appendChild(o);
+  Object.keys(cats).forEach(function(cat) {
+    var info = CAT_CORES[cat] || { emoji: '📦', label: cat };
+    var grp = document.createElement('optgroup');
+    grp.label = info.emoji + ' ' + cat;
+    cats[cat].forEach(function(i) {
+      var o = document.createElement('option');
+      o.value = i.id; o.textContent = i.nome + ' (' + i.estoque + ' un.)';
+      grp.appendChild(o);
+    });
+    s2.appendChild(grp);
   });
   s2.value = v2;
 }
@@ -132,6 +163,40 @@ window.adicionarItem = function() {
   rIP();
 };
 
+window.adicionarAcrescimo = function() {
+  var sel = document.getElementById('selAcrescimo');
+  var val = sel.value;
+  if (!val) return;
+  var parts = val.split('|');
+  var nome  = parts[0];
+  var preco = parseFloat(parts[1]) || 0;
+  // Evita duplicar
+  if (ACRESCIMOS.find(function(a) { return a.nome === nome; })) {
+    toast('Acréscimo "' + nome + '" já adicionado!', 'error');
+    sel.value = '';
+    return;
+  }
+  ACRESCIMOS.push({ nome: nome, preco: preco });
+  sel.value = '';
+  rAcrescimos();
+  rIP();
+};
+
+function rAcrescimos() {
+  var el = document.getElementById('acrescimosAdicionados');
+  if (!ACRESCIMOS.length) { el.innerHTML = ''; return; }
+  el.innerHTML = ACRESCIMOS.map(function(a, i) {
+    var label = a.nome + (a.preco > 0 ? ' +R$' + a.preco.toFixed(2).replace('.', ',') : ' ✓');
+    return '<span class="acrescimo-tag" onclick="remAcrescimo(' + i + ')" title="Clique para remover">' + label + ' ×</span>';
+  }).join('');
+}
+
+window.remAcrescimo = function(i) {
+  ACRESCIMOS.splice(i, 1);
+  rAcrescimos();
+  rIP();
+};
+
 function rIP() {
   var el = document.getElementById('itensPedido');
   if (!IP.length) {
@@ -153,13 +218,29 @@ function rIP() {
     html += '<button class="btn btn-danger btn-sm" onclick="remI(' + i + ')">✕</button>';
     html += '</div>';
   });
+  // Mostra acréscimos selecionados
+  if (ACRESCIMOS.length) {
+    var totalAcr = ACRESCIMOS.reduce(function(s,a){return s+a.preco;},0);
+    t += totalAcr;
+    html += '<div style="padding:10px 10px 6px;border-top:1px solid var(--br);margin-top:6px">';
+    html += '<div style="font-size:10px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Acréscimos</div>';
+    ACRESCIMOS.forEach(function(a, i) {
+      html += '<div class="item-row" style="padding:6px 10px">';
+      html += '<span class="item-name" style="color:var(--t2)">+ ' + a.nome + '</span>';
+      html += '<span class="item-price">' + (a.preco > 0 ? fmt(a.preco) : 'Grátis') + '</span>';
+      html += '<button class="btn btn-danger btn-sm" onclick="remAcrescimo(' + i + ')">✕</button>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+
   el.innerHTML = html;
   document.getElementById('totalPedido').textContent = fmt(t);
 }
 
 window.chgQ = function(i, d) { IP[i].qtd += d; if (IP[i].qtd <= 0) IP.splice(i, 1); rIP(); };
 window.remI = function(i) { IP.splice(i, 1); rIP(); };
-window.limparPedido = function() { if (IP.length && !confirm('Limpar todos os itens?')) return; IP = []; rIP(); };
+window.limparPedido = function() { if (IP.length && !confirm('Limpar todos os itens?')) return; IP = []; ACRESCIMOS = []; rAcrescimos(); rIP(); };
 
 window.finalizarPedido = async function() {
   var nome = document.getElementById('nomeCliente').value.trim();
@@ -169,10 +250,12 @@ window.finalizarPedido = async function() {
   var btn = document.getElementById('btnFinalizar');
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Salvando...';
   try {
-    var total = IP.reduce(function(s, i) { return s + i.preco * i.qtd; }, 0);
+    var totalAcr = ACRESCIMOS.reduce(function(s,a){return s+a.preco;},0);
+    var total = IP.reduce(function(s, i) { return s + i.preco * i.qtd; }, 0) + totalAcr;
     var itens = IP.map(function(i) { return {nome: i.nome, preco: i.preco, qtd: i.qtd}; });
+    var acrescimosData = ACRESCIMOS.map(function(a){return {nome:a.nome,preco:a.preco};});
     await db.collection('vendas').add({
-      cliente: nome, obs: obs || '', itens: itens,
+      cliente: nome, obs: obs || '', itens: itens, acrescimos: acrescimosData,
       total: total, hora: hora(),
       data: new Date().toLocaleDateString('pt-BR'),
       timestamp: ST()
@@ -190,7 +273,8 @@ window.finalizarPedido = async function() {
         });
       }
     }
-    IP = [];
+    IP = []; ACRESCIMOS = [];
+    rAcrescimos();
     document.getElementById('nomeCliente').value = '';
     document.getElementById('mesaObs').value = '';
     rIP();
