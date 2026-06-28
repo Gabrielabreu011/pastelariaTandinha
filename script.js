@@ -53,7 +53,7 @@ function dbOk(ok) {
 
 // ---- NAVEGAÇÃO ----
 window.setTab = function(t) {
-  ['pedido','dashboard','vendas','estoque','cardapio','acrescimos'].forEach(function(n, i) {
+  ['pedido','dashboard','vendas','estoque','cardapio'].forEach(function(n, i) {
     document.querySelectorAll('.ntab')[i].classList.toggle('active', n === t);
     document.getElementById('page-' + n).classList.toggle('active', n === t);
   });
@@ -911,4 +911,31 @@ window.exportarEstoque = function() {
   document.body.appendChild(a); a.click();
   document.body.removeChild(a); URL.revokeObjectURL(url);
   toast('✓ Estoque exportado!');
+};
+
+
+// ==========================================
+// LIMPAR HISTÓRICO DE PEDIDOS
+// ==========================================
+window.limparHistorico = async function() {
+  if (!V.length) { toast('Nenhum pedido no histórico!', 'error'); return; }
+  if (!confirm('⚠️ Tem certeza que deseja apagar TODO o histórico de pedidos?\n\nEsta ação não pode ser desfeita!')) return;
+  if (!confirm('🚨 Segunda confirmação: APAGAR ' + V.length + ' pedido(s) permanentemente?')) return;
+
+  try {
+    var batch = db.batch();
+    V.forEach(function(v) {
+      batch.delete(db.collection('vendas').doc(v.id));
+    });
+    await batch.commit();
+    toast('✓ Histórico apagado com sucesso!');
+  } catch(e) {
+    // Se muitos documentos, apaga um por um
+    try {
+      for (var i = 0; i < V.length; i++) {
+        await db.collection('vendas').doc(V[i].id).delete();
+      }
+      toast('✓ Histórico apagado!');
+    } catch(e2) { toast('Erro ao apagar histórico.', 'error'); }
+  }
 };
