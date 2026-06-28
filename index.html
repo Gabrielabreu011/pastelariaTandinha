@@ -1,1 +1,263 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pastelaria Tandinha</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<link rel="stylesheet" href="style.css">
 
+</head>
+<body>
+<div class="bg-glow"></div>
+
+<div id="splash">
+  <div class="sp-icon">🥟</div>
+  <div class="sp-title">Pastelaria Tandinha</div>
+  <div class="sp-sub">Conectando ao sistema...</div>
+  <div class="sp-dots"><span></span><span></span><span></span></div>
+</div>
+
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-icon">🥟</div>
+    <div>
+      <div class="logo-text">Pastelaria Tandinha</div>
+      <div class="logo-sub">Sistema de Vendas</div>
+    </div>
+  </div>
+  <div class="nav-tabs">
+    <div class="ntab active" onclick="setTab('pedido')">📋 Pedidos<span class="tab-dot"></span></div>
+    <div class="ntab" onclick="setTab('dashboard')">📈 Dashboard<span class="tab-dot"></span></div>
+    <div class="ntab" onclick="setTab('vendas')">🧾 Vendas<span class="tab-dot"></span></div>
+    <div class="ntab" onclick="setTab('estoque')">📦 Estoque<span class="tab-dot"></span></div>
+    <div class="ntab" onclick="setTab('cardapio')">📖 Cardápio<span class="tab-dot"></span></div>
+  </div>
+  <div class="topbar-right">
+    <div class="db-pill offline" id="dbStatus"><span class="dot"></span><span id="dbTxt">Conectando...</span></div>
+    <span class="clock" id="clock">--:--</span>
+  </div>
+</div>
+
+<div id="alertasEstoque" style="display:none"></div>
+
+<!-- PEDIDOS -->
+<div id="page-pedido" class="page active">
+  <div class="sidebar-row">
+    <div>
+      <div class="card">
+        <div class="card-title"><span class="cti">👤</span>Novo Pedido</div>
+        <div class="form-row">
+          <div><label>Nome do Cliente</label><input id="nomeCliente" type="text" placeholder="Ex: João Silva"></div>
+          <div><label>Mesa / Observação</label><input id="mesaObs" type="text" placeholder="Ex: Mesa 3, Viagem..."></div>
+        </div>
+        <div class="form-row">
+          <div><label>Adicionar Item</label><select id="selItem" onchange="adicionarItem()"><option value="">— Selecionar item —</option></select></div>
+          <div style="max-width:100px"><label>Quantidade</label><input id="qtdItem" type="number" value="1" min="1"></div>
+        </div>
+        <div class="form-row">
+          <div><label>Acréscimos <span style="color:var(--t3);font-weight:400;text-transform:none;font-size:10px">(opcional)</span></label>
+            <select id="selAcr" onchange="addAcr()"><option value="">— Selecionar acréscimo —</option></select>
+          </div>
+          <div id="acrsAdicionados" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding-top:22px"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="cti">🛒</span>Itens do Pedido</div>
+        <div id="itensPedido"><div class="empty"><span class="empty-icon">🛒</span>Nenhum item adicionado</div></div>
+        <div class="total-bar">
+          <div class="total-label">Total do Pedido</div>
+          <span class="total-val" id="totalPedido">R$ 0,00</span>
+        </div>
+        <div class="actions">
+          <button class="btn btn-ghost" onclick="limparPedido()">🗑 Limpar</button>
+          <button class="btn btn-gold" id="btnFinalizar" onclick="finalizarPedido()">✓ Finalizar Pedido</button>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:0">
+      <div class="card-title"><span class="cti">🕓</span>Últimos Pedidos</div>
+      <div id="ultimosPedidos"><div class="empty" style="padding:24px"><span class="empty-icon">🧾</span>Sem pedidos ainda</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="page-dashboard" class="page">
+  <div class="grid4">
+    <div class="metric" style="background:linear-gradient(135deg,rgba(91,141,238,.18),rgba(91,141,238,.06));border-color:rgba(91,141,238,.3)">
+      <div class="metric-bar" style="background:linear-gradient(90deg,transparent,#5b8dee,transparent)"></div>
+      <div class="m-lbl" style="color:rgba(91,141,238,.8)">📋 Pedidos</div>
+      <div class="m-val" id="d-ped" style="color:#7AAAF5">0</div>
+      <div class="m-sub" style="color:#5b8dee">realizados</div>
+    </div>
+    <div class="metric" style="background:linear-gradient(135deg,rgba(76,175,114,.18),rgba(76,175,114,.06));border-color:rgba(76,175,114,.3)">
+      <div class="metric-bar" style="background:linear-gradient(90deg,transparent,#4caf72,transparent)"></div>
+      <div class="m-lbl" style="color:rgba(76,175,114,.8)">💰 Faturamento</div>
+      <div class="m-val" id="d-fat" style="color:#6dc87d;font-size:20px">R$ 0,00</div>
+      <div class="m-sub" style="color:#4caf72">acumulado</div>
+    </div>
+    <div class="metric" style="background:linear-gradient(135deg,rgba(212,168,67,.18),rgba(212,168,67,.06));border-color:rgba(212,168,67,.3)">
+      <div class="metric-bar" style="background:linear-gradient(90deg,transparent,var(--g1),transparent)"></div>
+      <div class="m-lbl" style="color:rgba(212,168,67,.8)">🛒 Itens</div>
+      <div class="m-val" id="d-itens" style="color:var(--g2)">0</div>
+      <div class="m-sub" style="color:var(--g1)">vendidos</div>
+    </div>
+    <div class="metric" style="background:linear-gradient(135deg,rgba(208,96,96,.18),rgba(208,96,96,.06));border-color:rgba(208,96,96,.3)">
+      <div class="metric-bar" style="background:linear-gradient(90deg,transparent,#d06060,transparent)"></div>
+      <div class="m-lbl" style="color:rgba(208,96,96,.8)">🎯 Ticket Médio</div>
+      <div class="m-val" id="d-ticket" style="color:#e08080;font-size:20px">R$ 0,00</div>
+      <div class="m-sub" style="color:#d06060">por pedido</div>
+    </div>
+  </div>
+  <div class="grid2" style="margin-bottom:18px">
+    <div class="card" style="border-color:rgba(76,175,114,.2)">
+      <div class="card-title" style="color:#4caf72;border-bottom-color:rgba(76,175,114,.15)"><span class="cti" style="background:rgba(76,175,114,.12);border-color:rgba(76,175,114,.2)">🏆</span>Mais Vendidos</div>
+      <div id="d-top"><div class="empty"><span class="empty-icon">📊</span>Sem dados</div></div>
+    </div>
+    <div class="card" style="border-color:rgba(208,96,96,.2)">
+      <div class="card-title" style="color:#d06060;border-bottom-color:rgba(208,96,96,.15)"><span class="cti" style="background:rgba(208,96,96,.1);border-color:rgba(208,96,96,.2)">📉</span>Menos Vendidos</div>
+      <div id="d-low"><div class="empty"><span class="empty-icon">😴</span>Sem dados</div></div>
+    </div>
+  </div>
+  <div class="card" style="border-color:rgba(91,141,238,.2)">
+    <div class="card-title" style="color:#5b8dee;border-bottom-color:rgba(91,141,238,.15)"><span class="cti" style="background:rgba(91,141,238,.1);border-color:rgba(91,141,238,.2)">🥧</span>Vendas por Produto</div>
+    <div id="d-chart"><div class="empty"><span class="empty-icon">📈</span>Sem dados</div></div>
+  </div>
+</div>
+
+<!-- VENDAS -->
+<div id="page-vendas" class="page">
+  <div class="grid4">
+    <div class="metric"><div class="metric-bar" style="background:linear-gradient(90deg,transparent,var(--g1),transparent)"></div><div class="m-lbl">Pedidos</div><div class="m-val" id="v-ped">0</div><div class="m-sub" style="color:var(--g1)">realizados</div></div>
+    <div class="metric"><div class="metric-bar" style="background:linear-gradient(90deg,transparent,var(--g1),transparent)"></div><div class="m-lbl">Faturamento</div><div class="m-val gold" id="v-fat" style="font-size:20px">R$ 0,00</div><div class="m-sub" style="color:var(--g1)">total</div></div>
+    <div class="metric"><div class="metric-bar" style="background:linear-gradient(90deg,transparent,var(--g1),transparent)"></div><div class="m-lbl">Ticket Médio</div><div class="m-val gold" id="v-ticket" style="font-size:20px">R$ 0,00</div><div class="m-sub" style="color:var(--g1)">por pedido</div></div>
+    <div class="metric"><div class="metric-bar" style="background:linear-gradient(90deg,transparent,var(--green),transparent)"></div><div class="m-lbl">Itens Vendidos</div><div class="m-val" id="v-itens" style="color:var(--green)">0</div><div class="m-sub" style="color:var(--green)">unidades</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">
+      <span class="cti">🧾</span>Histórico de Pedidos
+      <div style="margin-left:auto;display:flex;gap:8px">
+        <button class="btn btn-sm btn-green" onclick="exportarVendas()">📥 Exportar</button>
+        <button class="btn btn-sm btn-danger" onclick="limparHistorico()">🗑 Limpar</button>
+      </div>
+    </div>
+    <div id="listaVendas"><div class="loading"><span class="spinner"></span>Carregando...</div></div>
+  </div>
+</div>
+
+<!-- ESTOQUE -->
+<div id="page-estoque" class="page">
+  <div class="grid2">
+    <div>
+      <div class="card">
+        <div class="card-title"><span class="cti">⬆</span>Registrar Entrada</div>
+        <div class="form-row full"><div><label>Produto</label><select id="selEstoque"><option value="">— Selecionar —</option></select></div></div>
+        <div class="form-row">
+          <div><label>Quantidade</label><input id="qtdEstoque" type="number" value="10" min="1"></div>
+          <div><label>Observação</label><input id="obsEstoque" type="text" placeholder="Ex: Compra mercado"></div>
+        </div>
+        <button class="btn btn-gold" onclick="entradaEstoque()">+ Registrar Entrada</button>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="cti">🕓</span>Movimentações
+          <div style="margin-left:auto"><button class="btn btn-sm btn-green" onclick="exportarEstoque()">📥 Exportar</button></div>
+        </div>
+        <div id="histEstoque"><div class="loading"><span class="spinner"></span>Carregando...</div></div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:0">
+      <div class="card-title"><span class="cti">📦</span>Situação do Estoque</div>
+      <div id="tabEstoque"><div class="loading"><span class="spinner"></span>Carregando...</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- CARDÁPIO -->
+<div id="page-cardapio" class="page">
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title"><span class="cti">➕</span>Adicionar Produto</div>
+      <div class="form-row full"><div><label>Nome</label><input id="nomeItem" type="text" placeholder="Ex: Pastel de Palmito"></div></div>
+      <div class="form-row">
+        <div><label>Categoria</label><select id="catItem"><option>Pastel Salgado</option><option>Pastel Doce</option><option>Bebida</option><option>Acompanhamento</option></select></div>
+        <div><label>Preço (R$)</label><input id="precoItem" type="number" step="0.50" min="0" placeholder="0,00"></div>
+      </div>
+      <div class="form-row">
+        <div><label>Estoque Inicial</label><input id="estoqueItem" type="number" value="20" min="0"></div>
+        <div><label>Estoque Mínimo</label><input id="minEstoque" type="number" value="5" min="0"></div>
+      </div>
+      <button class="btn btn-gold" onclick="salvarItem()">💾 Salvar Produto</button>
+    </div>
+    <div class="card" style="margin-bottom:0">
+      <div class="card-title"><span class="cti">📖</span>Cardápio</div>
+      <div id="tabCardapio"><div class="loading"><span class="spinner"></span>Carregando...</div></div>
+    </div>
+  </div>
+
+  <div class="grid2" style="margin-top:18px">
+    <div class="card">
+      <div class="card-title"><span class="cti">✨</span>Adicionar Acréscimo</div>
+      <div class="form-row full"><div><label>Nome</label><input id="nomeAcr" type="text" placeholder="Ex: Catupiry, Milho..."></div></div>
+      <div class="form-row">
+        <div><label>Preço (R$) — 0 = Grátis</label><input id="precoAcr" type="number" step="0.50" min="0" value="0"></div>
+        <div><label>Categoria</label><select id="catAcr"><option>Extras</option><option>Queijos</option><option>Carnes</option><option>Molhos</option><option>Outros</option></select></div>
+      </div>
+      <button class="btn btn-gold" onclick="salvarAcr()">💾 Salvar Acréscimo</button>
+    </div>
+    <div class="card" style="margin-bottom:0">
+      <div class="card-title"><span class="cti">✨</span>Acréscimos Cadastrados</div>
+      <div id="tabAcr"><div class="loading"><span class="spinner"></span>Carregando...</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR PEDIDO -->
+<div class="modal-bg" id="modalPedido">
+  <div class="modal">
+    <div class="modal-title">✏️ Editar Pedido<button class="modal-close" onclick="fecharModal('modalPedido')">✕</button></div>
+    <div class="form-row">
+      <div><label>Cliente</label><input id="editNome" type="text"></div>
+      <div><label>Observação</label><input id="editObs" type="text"></div>
+    </div>
+    <div style="margin-bottom:13px"><label>Itens</label><div id="editItens"></div></div>
+    <div class="total-bar" style="margin-bottom:14px">
+      <div class="total-label">Novo Total</div>
+      <span class="total-val" id="editTotal">R$ 0,00</span>
+    </div>
+    <div class="actions">
+      <button class="btn btn-ghost" onclick="fecharModal('modalPedido')">Cancelar</button>
+      <button class="btn btn-gold" onclick="salvarEdicao()">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR CARDÁPIO -->
+<div class="modal-bg" id="modalItem">
+  <div class="modal">
+    <div class="modal-title">✏️ Editar Item<button class="modal-close" onclick="fecharModal('modalItem')">✕</button></div>
+    <input type="hidden" id="editItemId">
+    <div class="form-row full" style="margin-bottom:13px"><div><label>Nome</label><input id="editItemNome" type="text"></div></div>
+    <div class="form-row">
+      <div><label>Categoria</label><select id="editItemCat"><option>Pastel Salgado</option><option>Pastel Doce</option><option>Bebida</option><option>Acompanhamento</option></select></div>
+      <div><label>Preço (R$)</label><input id="editItemPreco" type="number" step="0.50" min="0"></div>
+    </div>
+    <div class="form-row">
+      <div><label>Estoque Atual</label><input id="editItemEst" type="number" min="0" style="font-size:18px;font-weight:800;color:var(--g1)"></div>
+      <div><label>Estoque Mínimo</label><input id="editItemMin" type="number" min="0"></div>
+    </div>
+    <div class="actions">
+      <button class="btn btn-ghost" onclick="fecharModal('modalItem')">Cancelar</button>
+      <button class="btn btn-gold" onclick="salvarEditItem()">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
