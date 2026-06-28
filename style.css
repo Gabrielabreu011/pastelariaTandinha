@@ -358,3 +358,49 @@ tr:hover td { background: rgba(255,255,255,.025); }
   color: var(--g1);
   border: 1px solid rgba(212,168,67,.2);
 }
+
+/* ---- SELECT CATEGORIAS ---- */
+#selItem {
+  background: var(--s3);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+#selItem optgroup {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  padding: 4px 0;
+}
+#selItem optgroup[label*="SALGADO"] { color: #f97316; }
+#selItem optgroup[label*="DOCE"]    { color: #f472b6; }
+#selItem optgroup[label*="BEBIDA"]  { color: #22d3ee; }
+#selItem optgroup[label*="ACOMP"]   { color: #a3e635; }
+
+#selItem option {
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 12px;
+  color: var(--t1);
+  background: var(--s3);
+}
+#selItem option:disabled {
+  color: var(--red);
+  font-style: italic;
+}
+
+/* Wrapper com badge de categoria ao lado do select */
+.sel-wrapper { position: relative; }
+.sel-cat-badge {
+  position: absolute;
+  right: 36px; top: 50%;
+  transform: translateY(-50%);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 5px;
+  pointer-events: none;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+}
