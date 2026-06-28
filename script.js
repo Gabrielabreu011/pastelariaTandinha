@@ -15,7 +15,7 @@ var db = firebase.firestore();
 var ST = function() { return firebase.firestore.FieldValue.serverTimestamp(); };
 
 // ---- ESTADO ----
-var C = [], V = [], M = [], IP = [], editId = null, editIL = [], ACRESCIMOS = [];
+var C = [], V = [], M = [], IP = [], ACR = [], editId = null, editIL = [], ACRESCIMOS = [];
 var PIE_COLORS = ['#5b8dee','#4caf72','#D4A843','#d06060','#a78bfa','#f97316','#22d3ee','#f472b6','#a3e635','#fbbf24'];
 
 // ---- UTILITÁRIOS ----
@@ -53,7 +53,7 @@ function dbOk(ok) {
 
 // ---- NAVEGAÇÃO ----
 window.setTab = function(t) {
-  ['pedido','dashboard','vendas','estoque','cardapio'].forEach(function(n, i) {
+  ['pedido','dashboard','vendas','estoque','cardapio','acrescimos'].forEach(function(n, i) {
     document.querySelectorAll('.ntab')[i].classList.toggle('active', n === t);
     document.getElementById('page-' + n).classList.toggle('active', n === t);
   });
@@ -118,6 +118,12 @@ db.collection('cardapio').orderBy('codigo').onSnapshot(function(s) {
   fillSels(); rCard(); rEst(); verificarAlertas(); dbOk(true);
 }, function() { dbOk(false); });
 
+// Listener acréscimos
+db.collection('acrescimos').orderBy('categoria').onSnapshot(function(s) {
+  ACR = s.docs.map(function(d) { return Object.assign({id: d.id}, d.data()); });
+  fillSelAcr(); rTabelaAcr(); dbOk(true);
+}, function() { dbOk(false); });
+
 db.collection('vendas').orderBy('timestamp','desc').onSnapshot(function(s) {
   V = s.docs.map(function(d) { return Object.assign({id: d.id}, d.data()); });
   rUlt(); rVen(); rDash(); dbOk(true);
@@ -163,13 +169,37 @@ window.adicionarItem = function() {
   rIP();
 };
 
+function fillSelAcr() {
+  var s = document.getElementById('selAcrescimo');
+  if (!s) return;
+  var v = s.value;
+  s.innerHTML = '<option value="">— Selecionar acréscimo —</option>';
+  var cats = {};
+  ACR.forEach(function(a) {
+    if (!cats[a.categoria]) cats[a.categoria] = [];
+    cats[a.categoria].push(a);
+  });
+  Object.keys(cats).forEach(function(cat) {
+    var grp = document.createElement('optgroup');
+    grp.label = '✨ ' + cat.toUpperCase();
+    cats[cat].forEach(function(a) {
+      var o = document.createElement('option');
+      o.value = a.id + '|' + a.nome + '|' + a.preco;
+      o.textContent = a.nome + ' — ' + (a.preco > 0 ? 'R$ ' + a.preco.toFixed(2).replace('.', ',') : 'Grátis');
+      grp.appendChild(o);
+    });
+    s.appendChild(grp);
+  });
+  s.value = v;
+}
+
 window.adicionarAcrescimo = function() {
   var sel = document.getElementById('selAcrescimo');
   var val = sel.value;
   if (!val) return;
   var parts = val.split('|');
-  var nome  = parts[0];
-  var preco = parseFloat(parts[1]) || 0;
+  var nome  = parts[1];
+  var preco = parseFloat(parts[2]) || 0;
   // Evita duplicar
   if (ACRESCIMOS.find(function(a) { return a.nome === nome; })) {
     toast('Acréscimo "' + nome + '" já adicionado!', 'error');
@@ -632,6 +662,71 @@ window.salvarEditItem = async function() {
     fecharModalItem(); toast('✓ Item atualizado!');
   } catch(e) { toast('Erro ao salvar.', 'error'); }
 };
+
+// ==========================================
+// ACRÉSCIMOS CRUD
+// ==========================================
+window.salvarAcr = async function() {
+  var nm = document.getElementById('nomeAcr').value.trim();
+  var pr = parseFloat(document.getElementById('precoAcr').value) || 0;
+  var ct = document.getElementById('catAcr').value;
+  if (!nm) { toast('Informe o nome do acréscimo!', 'error'); return; }
+  try {
+    await db.collection('acrescimos').add({nome: nm, preco: pr, categoria: ct, timestamp: ST()});
+    document.getElementById('nomeAcr').value  = '';
+    document.getElementById('precoAcr').value = '0';
+    toast('✓ "' + nm + '" adicionado!');
+  } catch(e) { toast('Erro ao salvar.', 'error'); }
+};
+
+window.excluirAcr = async function(id) {
+  var a = ACR.find(function(x) { return x.id === id; });
+  if (!confirm('Excluir "' + a.nome + '"?')) return;
+  try { await db.collection('acrescimos').doc(id).delete(); toast('"' + a.nome + '" removido.'); }
+  catch(e) { toast('Erro ao excluir.', 'error'); }
+};
+
+window.editarAcr = async function(id) {
+  var a = ACR.find(function(x) { return x.id === id; });
+  var novoNome  = prompt('Nome do acréscimo:', a.nome);
+  if (!novoNome) return;
+  var novoPreco = parseFloat(prompt('Preço (0 = Grátis):', a.preco)) || 0;
+  try {
+    await db.collection('acrescimos').doc(id).update({nome: novoNome, preco: novoPreco});
+    toast('✓ Atualizado!');
+  } catch(e) { toast('Erro ao editar.', 'error'); }
+};
+
+function rTabelaAcr() {
+  var el = document.getElementById('tabelaAcr');
+  if (!el) return;
+  if (!ACR.length) {
+    el.innerHTML = '<div class="empty"><span class="empty-icon">✨</span>Nenhum acréscimo cadastrado<br><span style="font-size:12px;margin-top:6px;display:block">Adicione ao lado para aparecer nos pedidos</span></div>';
+    return;
+  }
+  var cats = {};
+  ACR.forEach(function(a) {
+    if (!cats[a.categoria]) cats[a.categoria] = [];
+    cats[a.categoria].push(a);
+  });
+  var html = '';
+  Object.keys(cats).forEach(function(cat) {
+    html += '<div style="margin-bottom:20px">';
+    html += '<div class="cat-label">✨ ' + cat + '</div>';
+    html += '<table><thead><tr><th>Nome</th><th>Preço</th><th>Ações</th></tr></thead><tbody>';
+    cats[cat].forEach(function(a) {
+      html += '<tr>';
+      html += '<td style="font-weight:600;color:var(--t1)">' + a.nome + '</td>';
+      html += '<td style="font-weight:700;color:' + (a.preco > 0 ? 'var(--g1)' : '#6dc87d') + '">' + (a.preco > 0 ? 'R$ ' + a.preco.toFixed(2).replace('.', ',') : 'Grátis') + '</td>';
+      html += '<td><div style="display:flex;gap:6px">';
+      html += '<button class="btn btn-edit btn-sm" onclick="editarAcr('' + a.id + '')">✏️ Editar</button>';
+      html += '<button class="btn btn-danger btn-sm" onclick="excluirAcr('' + a.id + '')">🗑</button>';
+      html += '</div></td></tr>';
+    });
+    html += '</tbody></table></div>';
+  });
+  el.innerHTML = html;
+}
 
 function rCard() {
   var el = document.getElementById('tabelaCardapio');
