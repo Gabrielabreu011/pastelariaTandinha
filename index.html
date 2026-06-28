@@ -38,7 +38,6 @@
     <div class="ntab" onclick="setTab('vendas')">🧾 Vendas<span class="tab-dot"></span></div>
     <div class="ntab" onclick="setTab('estoque')">📦 Estoque<span class="tab-dot"></span></div>
     <div class="ntab" onclick="setTab('cardapio')">📖 Cardápio<span class="tab-dot"></span></div>
-    <div class="ntab" onclick="setTab('acrescimos')">✨ Acréscimos<span class="tab-dot"></span></div>
   </div>
   <div class="topbar-right">
     <div class="db-pill offline" id="dbStatus"><span class="dot"></span><span id="dbTxt">Conectando...</span></div>
@@ -170,7 +169,8 @@
     <div class="card-title">
       <span class="card-title-icon">🧾</span>Histórico de Pedidos
       <div style="margin-left:auto">
-        <button class="btn btn-sm" onclick="exportarVendas()" style="background:rgba(76,175,114,.1);border-color:rgba(76,175,114,.3);color:#6dc87d;font-size:11px">📥 Exportar Planilha</button>
+        <button class="btn btn-sm" onclick="exportarVendas()" style="background:rgba(76,175,114,.1);border-color:rgba(76,175,114,.3);color:#6dc87d;font-size:11px">📥 Exportar</button>
+        <button class="btn btn-sm btn-danger" onclick="limparHistorico()" style="font-size:11px">🗑 Limpar Histórico</button>
       </div>
     </div>
     <div id="listaVendas"><div class="loading"><span class="spinner"></span>Carregando...</div></div>
@@ -233,13 +233,11 @@
       <div id="tabelaCardapio"><div class="loading"><span class="spinner"></span>Carregando...</div></div>
     </div>
   </div>
-</div>
 
-<!-- ACRÉSCIMOS -->
-<div id="page-acrescimos" class="page">
-  <div class="grid2">
+  <!-- ACRÉSCIMOS dentro do cardápio -->
+  <div class="grid2" style="margin-top:20px">
     <div class="card">
-      <div class="card-title"><span class="card-title-icon">➕</span>Adicionar Acréscimo</div>
+      <div class="card-title"><span class="card-title-icon">✨</span>Adicionar Acréscimo</div>
       <div class="form-row full">
         <div><label>Nome do Acréscimo</label><input id="nomeAcr" type="text" placeholder="Ex: Milho, Catupiry..."></div>
       </div>
