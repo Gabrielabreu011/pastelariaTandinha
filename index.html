@@ -67,6 +67,25 @@
           </div>
           <div style="max-width:100px"><label>Quantidade</label><input id="qtdItem" type="number" value="1" min="1"></div>
         </div>
+        <div class="form-row">
+          <div>
+            <label>Acréscimos <span style="color:var(--t3);font-weight:400;text-transform:none;font-size:10px">(opcional)</span></label>
+            <select id="selAcrescimo" onchange="adicionarAcrescimo()">
+              <option value="">— Selecionar acréscimo —</option>
+              <optgroup label="🌽 Extras">
+                <option value="Milho|0">Milho — Grátis</option>
+                <option value="Catupiry|2">Catupiry — R$ 2,00</option>
+                <option value="Cheddar|2">Cheddar — R$ 2,00</option>
+                <option value="Bacon|3">Bacon — R$ 3,00</option>
+                <option value="Palmito|2.50">Palmito — R$ 2,50</option>
+                <option value="Azeitona|1">Azeitona — R$ 1,00</option>
+                <option value="Cebola|0">Cebola — Grátis</option>
+                <option value="Orégano|0">Orégano — Grátis</option>
+              </optgroup>
+            </select>
+          </div>
+          <div id="acrescimosAdicionados" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding-top:22px"></div>
+        </div>
       </div>
       <div class="card">
         <div class="card-title"><span class="card-title-icon">🛒</span>Itens do Pedido</div>
