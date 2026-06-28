@@ -59,8 +59,11 @@
           <div><label>Mesa / Observação</label><input id="mesaObs" type="text" placeholder="Ex: Mesa 3, Viagem..."></div>
         </div>
         <div class="form-row">
-          <div><label>Adicionar Item</label>
-            <select id="selItem" onchange="adicionarItem()"><option value="">— Selecionar item —</option></select>
+          <div>
+            <label>Adicionar Item</label>
+            <div class="sel-wrapper">
+              <select id="selItem" onchange="adicionarItem()"><option value="">— Selecionar item —</option></select>
+            </div>
           </div>
           <div style="max-width:100px"><label>Quantidade</label><input id="qtdItem" type="number" value="1" min="1"></div>
         </div>
